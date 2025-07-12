@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Box,
@@ -13,7 +13,10 @@ import {
   useTheme,
   Stack,
 } from "@mui/material";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
+  PieChart, Pie, Cell, LineChart, Line
+} from "recharts";
 
 const kpiColors = ["success", "info", "primary", "warning"];
 const pieColors = ["#1976d2", "#2e7d32", "#ed6c02", "#d32f2f", "#9c27b0"];
@@ -37,18 +40,27 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboard = async () => {
       setLoading(true);
-      // Datos reales o ficticios según tu backend
-      const [clientesRes, productosRes, facturasRes] = await Promise.all([
-        axios.get("http://localhost:8000/clients"),
-        axios.get("http://localhost:8000/products"),
-        axios.get("http://localhost:8000/invoices"),
-      ]);
-      setKpi({
-        clientes: clientesRes.data.length,
-        productos: productosRes.data.length,
-        facturas: facturasRes.data.length,
-        cuentasPorCobrar: facturasRes.data.filter(f => f.status === "pending").length,
-      });
+      try {
+        // Datos reales o ficticios según tu backend
+        const [clientesRes, productosRes, facturasRes] = await Promise.all([
+          axios.get("http://localhost:8000/clients"),
+          axios.get("http://localhost:8000/products"),
+          axios.get("http://localhost:8000/invoices"),
+        ]);
+        setKpi({
+          clientes: clientesRes.data.length,
+          productos: productosRes.data.length,
+          facturas: facturasRes.data.length,
+          cuentasPorCobrar: facturasRes.data.filter(f => f.status === "pending").length,
+        });
+      } catch (error) {
+        setKpi({
+          clientes: 0,
+          productos: 0,
+          facturas: 0,
+          cuentasPorCobrar: 0,
+        });
+      }
       setVentasMensuales([
         { mes: "Ene", total: 12000 },
         { mes: "Feb", total: 9800 },
@@ -129,14 +141,18 @@ export default function DashboardPage() {
         ) : (
           <>
             {/* KPIs: una sola fila, bien alineados */}
-            <Grid container spacing={5} mb={5} justifyContent="center">
+            <Grid container columns={12} spacing={5} mb={5} justifyContent="center">
               {[
                 { label: "Clientes", value: kpi.clientes, chip: "Activos", color: kpiColors[0] },
                 { label: "Productos", value: kpi.productos, chip: "En stock", color: kpiColors[1] },
                 { label: "Facturas", value: kpi.facturas, chip: "Este mes", color: kpiColors[2] },
                 { label: "Cuentas por Cobrar", value: kpi.cuentasPorCobrar, chip: "Pendientes", color: kpiColors[3] }
               ].map((item, idx) => (
-                <Grid item xs={12} sm={6} md={3} key={item.label}>
+                <Grid
+                  key={item.label}
+                  gridColumn={{ xs: "span 12", sm: "span 6", md: "span 3" }}
+                  gridRow="span 1"
+                >
                   <Card elevation={6} sx={{
                     borderRadius: 3,
                     minHeight: 120,
@@ -162,8 +178,8 @@ export default function DashboardPage() {
             </Grid>
 
             {/* Primera fila de gráficas, 3 columnas iguales */}
-            <Grid container spacing={3} mb={3}>
-              <Grid item xs={12} md={4}>
+            <Grid container columns={12} spacing={3} mb={3}>
+              <Grid gridColumn={{ xs: "span 12", md: "span 4" }} gridRow="span 1">
                 <Card elevation={6} sx={{ borderRadius: 3, minHeight: 320, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <CardContent>
                     <Typography variant="h6" fontWeight={600} mb={2}>
@@ -181,7 +197,7 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid gridColumn={{ xs: "span 12", md: "span 4" }} gridRow="span 1">
                 <Card elevation={6} sx={{ borderRadius: 3, minHeight: 320, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <CardContent>
                     <Typography variant="h6" fontWeight={600} mb={2}>
@@ -208,7 +224,7 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid gridColumn={{ xs: "span 12", md: "span 4" }} gridRow="span 1">
                 <Card elevation={6} sx={{ borderRadius: 3, minHeight: 320, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <CardContent>
                     <Typography variant="h6" fontWeight={600} mb={2}>
@@ -230,8 +246,8 @@ export default function DashboardPage() {
             </Grid>
 
             {/* Segunda fila de ML, 2 columnas iguales */}
-            <Grid container spacing={3} mb={3}>
-              <Grid item xs={12} md={6}>
+            <Grid container columns={12} spacing={3} mb={3}>
+              <Grid gridColumn={{ xs: "span 12", md: "span 6" }} gridRow="span 1">
                 <Card elevation={6} sx={{ borderRadius: 3, minHeight: 160, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <CardContent>
                     <Typography variant="h6" fontWeight={600} mb={2}>
@@ -255,7 +271,7 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid gridColumn={{ xs: "span 12", md: "span 6" }} gridRow="span 1">
                 <Card elevation={6} sx={{ borderRadius: 3, minHeight: 160, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <CardContent>
                     <Typography variant="h6" fontWeight={600} mb={2}>

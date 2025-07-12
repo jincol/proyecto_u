@@ -1,12 +1,18 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Box, Typography, Button, Stack, TextField, Autocomplete, Snackbar, Alert
+  Box, Typography, Button, Stack, TextField, Autocomplete, Snackbar, Alert, CircularProgress
 } from "@mui/material";
 import FacturasTable from "./FacturasTable";
 import FacturaModal from "./FacturasModal";
 import type { Invoice } from "../../types/invoice";
+import {
+  getFacturas,
+  createFactura,
+  updateFactura,
+  deleteFactura,
+} from "../../api/facturas";
 
-// Datos demo
+// Si tienes endpoints para clientes/productos, ¡úsalos! Si no, deja los demo por ahora:
 const clientesDemo = [
   { id: 1, name: "Cliente A" },
   { id: 2, name: "Cliente B" },
@@ -16,41 +22,37 @@ const productosDemo = [
   { product_id: 2, name: "Producto Y" },
 ];
 
-function randomFolio() {
-  return "F-" + Math.floor(1000 + Math.random() * 9000);
-}
-
-const facturasDemo: Invoice[] = [
-  {
-    id: 1, folio: "F-1001", client_id: 1, client_name: "Cliente A",
-    date: "2025-06-10", due_date: "2025-07-10",
-    subtotal: 100, taxes: 18, total: 118,
-    notes: "", payment_method: "efectivo", accounts_receivable: 0,
-    status: "pending", products: [{ product_id: 1, name: "Producto X", quantity: 2, unit_price: 50 }]
-  },
-  {
-    id: 2, folio: "F-1002", client_id: 2, client_name: "Cliente B",
-    date: "2025-06-12", due_date: "2025-07-12",
-    subtotal: 150, taxes: 27, total: 177,
-    notes: "Entrega parcial", payment_method: "transferencia", accounts_receivable: 50,
-    status: "paid", products: [{ product_id: 2, name: "Producto Y", quantity: 3, unit_price: 50 }]
-  },
-];
-
 export default function FacturasPage() {
-  const [facturas, setFacturas] = useState<Invoice[]>(facturasDemo);
+  const [facturas, setFacturas] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [facturaEdit, setFacturaEdit] = useState<Invoice | undefined>(undefined);
-  const [snackbar, setSnackbar] = useState<{open: boolean, msg: string}|null>(null);
-  const [filtroCliente, setFiltroCliente] = useState<{id: number, name: string}|null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean, msg: string } | null>(null);
+  const [filtroCliente, setFiltroCliente] = useState<{ id: number, name: string } | null>(null);
   const [filtroFolio, setFiltroFolio] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
+  useEffect(() => {
+    fetchFacturas();
+  }, []);
+
+  const fetchFacturas = async () => {
+    setLoading(true);
+    try {
+      const data = await getFacturas();
+      setFacturas(data);
+    } catch (err) {
+      setSnackbar({ open: true, msg: "Error cargando facturas" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filtrar facturas por cliente y folio
   const facturasFiltradas = facturas.filter(f =>
     (!filtroCliente || f.client_id === filtroCliente.id) &&
-    (f.folio.toLowerCase().includes(filtroFolio.toLowerCase()))
+    (f.folio?.toLowerCase().includes(filtroFolio.toLowerCase()))
   );
 
   const handleNuevaFactura = () => {
@@ -63,35 +65,37 @@ export default function FacturasPage() {
     setModalOpen(true);
   };
 
-  const handleEliminarFactura = (factura: Invoice) => {
+  const handleEliminarFactura = async (factura: Invoice) => {
     if (window.confirm(`¿Eliminar factura ${factura.folio}?`)) {
-      setFacturas(facturas.filter(f => f.id !== factura.id));
-      setSnackbar({open: true, msg: "Factura eliminada"});
+      try {
+        await deleteFactura(factura.id);
+        setSnackbar({ open: true, msg: "Factura eliminada" });
+        fetchFacturas();
+      } catch (err) {
+        setSnackbar({ open: true, msg: "Error eliminando factura" });
+      }
     }
   };
 
-  const handleGuardarFactura = (data: Omit<Invoice, "id" | "folio" | "client_name">) => {
-    if (facturaEdit) {
-      setFacturas(facturas.map(f =>
-        f.id === facturaEdit.id ? { ...facturaEdit, ...data, client_name: clientesDemo.find(c => c.id === data.client_id)?.name ?? "" } : f
-      ));
-      setSnackbar({open: true, msg: "Factura editada"});
-    } else {
-      const newFactura: Invoice = {
-        ...data,
-        id: Date.now(),
-        folio: randomFolio(),
-        client_name: clientesDemo.find(c => c.id === data.client_id)?.name || "",
-      };
-      setFacturas([newFactura, ...facturas]);
-      setSnackbar({open: true, msg: "Factura agregada"});
+  const handleGuardarFactura = async (data: Omit<Invoice, "id" | "folio" | "client_name">) => {
+    try {
+      if (facturaEdit) {
+        await updateFactura(facturaEdit.id, data);
+        setSnackbar({ open: true, msg: "Factura editada" });
+      } else {
+        await createFactura(data);
+        setSnackbar({ open: true, msg: "Factura agregada" });
+      }
+      setModalOpen(false);
+      fetchFacturas();
+    } catch (err) {
+      setSnackbar({ open: true, msg: "Error guardando factura" });
     }
-    setModalOpen(false);
   };
 
   const handleRecargar = () => {
-    setSnackbar({open: true, msg: "Recargado (simulado)"});
-    setFacturas([...facturasDemo]);
+    fetchFacturas();
+    setSnackbar({ open: true, msg: "Facturas recargadas" });
   };
 
   return (
@@ -119,15 +123,19 @@ export default function FacturasPage() {
           sx={{ width: 160 }}
         />
       </Stack>
-      <FacturasTable
-        facturas={facturasFiltradas}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        onPageChange={(_, p) => setPage(p)}
-        onRowsPerPageChange={e => { setRowsPerPage(parseInt(e.target.value, 10) || 5); setPage(0); }}
-        onEdit={handleEditarFactura}
-        onDelete={handleEliminarFactura}
-      />
+      {loading ? (
+        <CircularProgress />
+      ) : (
+        <FacturasTable
+          facturas={facturasFiltradas}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          onPageChange={(_, p) => setPage(p)}
+          onRowsPerPageChange={e => { setRowsPerPage(parseInt(e.target.value, 10) || 5); setPage(0); }}
+          onEdit={handleEditarFactura}
+          onDelete={handleEliminarFactura}
+        />
+      )}
       <FacturaModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
