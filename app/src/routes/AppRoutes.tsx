@@ -17,6 +17,7 @@ export default function AppRoutes() {
       <Route path="/clientes" element={isAuth ? <ClientesPage /> : <Navigate to="/login" />} />
       <Route path="/inventario" element={isAuth ? <InventarioPage /> : <Navigate to="/login" />} />
       <Route path="/facturas" element={isAuth ? <FacturasPage /> : <Navigate to="/login" />} />
+      
       <Route path="/configuracion" element={isAuth ? <ConfiguracionPage /> : <Navigate to="/login" />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
