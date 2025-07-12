@@ -1,10 +1,37 @@
-import { Button } from "@mui/material";
-import { exportCSV } from "../utils/exportCSV";
+import { IconButton, Menu, MenuItem, Tooltip } from "@mui/material";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import { useState } from "react";
 
-export default function ExportButton({ data, filename }: { data: any[]; filename: string }) {
+const options = [
+  { label: "Exportar a PDF", format: "pdf" },
+  { label: "Exportar a Excel", format: "excel" },
+  { label: "Exportar a CSV", format: "csv" },
+  { label: "Exportar a XML", format: "xml" },
+];
+
+export default function ExportButton() {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleExport = (format: string) => {
+    setAnchorEl(null);
+    // TODO: Implementar la exportación real
+    alert(`Exportando a ${format.toUpperCase()}...`);
+  };
+
   return (
-    <Button variant="outlined" onClick={() => exportCSV(data, filename)}>
-      Exportar CSV
-    </Button>
+    <>
+      <Tooltip title="Exportar datos">
+        <IconButton onClick={e => setAnchorEl(e.currentTarget)} color="primary">
+          <FileDownloadIcon />
+        </IconButton>
+      </Tooltip>
+      <Menu open={!!anchorEl} anchorEl={anchorEl} onClose={() => setAnchorEl(null)}>
+        {options.map(opt => (
+          <MenuItem key={opt.format} onClick={() => handleExport(opt.format)}>
+            {opt.label}
+          </MenuItem>
+        ))}
+      </Menu>
+    </>
   );
 }

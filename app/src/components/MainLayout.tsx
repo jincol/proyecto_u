@@ -1,30 +1,36 @@
-import React from "react";
 import { Box } from "@mui/material";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import NotificationBell from "./NotificationBell";
 import { Outlet } from "react-router-dom";
 
 export default function MainLayout() {
-  const handleLogout = () => {
-    alert("Cerrar sesión");
-  };
-
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", background: "#1976d2" }}>
-      <Header onLogout={handleLogout} />
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+      {/* Sidebar: menú lateral */}
       <Sidebar />
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          ml: "220px", // Sidebar width
-          mt: "64px",  // Header height
-          minHeight: "calc(100vh - 64px)",
-          background: "#1976d2", // Usa tu color
-        }}
-      >
-        <Outlet />
+
+      {/* Área derecha: header fijo + contenido dinámico */}
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+        {/* Header: título, usuario, notificaciones, export, theme */}
+        <Header>
+          <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 2 }}>
+            <NotificationBell />
+          </Box>
+        </Header>
+        {/* Contenido principal de la página */}
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            px: { xs: 2, md: 4 },
+            py: { xs: 2, md: 3 },
+            bgcolor: "background.paper",
+            minHeight: 0,
+          }}
+        >
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );

@@ -1,4 +1,4 @@
-import { List, ListItem, ListItemIcon, ListItemText, Drawer } from "@mui/material";
+import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Divider, Box, Typography } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import InventoryIcon from "@mui/icons-material/Inventory";
@@ -16,12 +16,31 @@ const menu = [
 
 export default function Sidebar() {
   const location = useLocation();
+
+  // TODO: Integrar con branding y permisos por rol
   return (
-    <Drawer variant="permanent" sx={{ width: 220, "& .MuiDrawer-paper": { width: 220 } }}>
-      <List>
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: 220,
+        [`& .MuiDrawer-paper`]: {
+          width: 220,
+          boxSizing: "border-box",
+          bgcolor: "background.paper",
+          borderRight: 0,
+          pt: 1,
+        },
+      }}
+    >
+      <Box sx={{ px: 2, py: 2 }}>
+        <Typography variant="subtitle1" fontWeight={600}>
+          Menú principal
+        </Typography>
+      </Box>
+      <Divider />
+      <List sx={{ pt: 0 }}>
         {menu.map(item => (
-          <ListItem
-            button
+          <ListItemButton
             key={item.text}
             component={Link}
             to={item.path}
@@ -29,7 +48,7 @@ export default function Sidebar() {
           >
             <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
-          </ListItem>
+          </ListItemButton>
         ))}
       </List>
     </Drawer>
