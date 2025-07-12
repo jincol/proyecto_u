@@ -8,21 +8,26 @@ import ConfiguracionPage from "../features/configuracion/ConfiguracionPage";
 import LoginPage from "../features/auth/LoginPage";
 import NotFound from "../pages/NotFound";
 
-// Puedes implementar lógica de roles aquí si lo necesitas en el futuro
+// IMPORTA LOS COMPONENTES NUEVOS:
+import PagosPage from "../features/pagos/PagosPage";
+import NotificacionesPage from "../features/notificaciones/NotificacionesPage";
+import RecurrenciasPage from "../features/recurrencias/RecurrenciasPage";
+import SegmentosPage from "../features/segmentos/SegmentosPage";
+import CategoriasPage from "../features/categorias/CategoriasPage";
+import MLResultadosPage from "../features/ml/MLResultadosPage";
+
+// Auth wrapper
 function RequireAuth({ children }: { children: JSX.Element }) {
   const isAuth = !!localStorage.getItem("token");
-  // TODO: integrar roles/permisos si es necesario
   return isAuth ? children : <Navigate to="/login" replace />;
 }
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Login y error siempre fuera del layout */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="*" element={<NotFound />} />
 
-      {/* Todas las páginas principales dentro del layout */}
       <Route element={<RequireAuth><MainLayout /></RequireAuth>}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -30,6 +35,13 @@ export default function AppRoutes() {
         <Route path="/inventario" element={<InventarioPage />} />
         <Route path="/facturas" element={<FacturasPage />} />
         <Route path="/configuracion" element={<ConfiguracionPage />} />
+        {/* Agrega las nuevas páginas */}
+        <Route path="/pagos" element={<PagosPage />} />
+        <Route path="/notificaciones" element={<NotificacionesPage />} />
+        <Route path="/recurrencias" element={<RecurrenciasPage />} />
+        <Route path="/segmentos" element={<SegmentosPage />} />
+        <Route path="/categorias" element={<CategoriasPage />} />
+        <Route path="/ml-resultados" element={<MLResultadosPage />} />
       </Route>
     </Routes>
   );

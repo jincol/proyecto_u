@@ -10,7 +10,7 @@ from app.schemas.client_segment import (
 from app.crud import client_segment as crud
 from app.db.session import get_db
 
-router = APIRouter(prefix="/client-segments", tags=["client-segments"])
+router = APIRouter(prefix="/segments", tags=["segments"])  # CAMBIA AQUÍ
 
 @router.post("/", response_model=ClientSegmentOut, status_code=status.HTTP_201_CREATED)
 def create_segment(segment_in: ClientSegmentCreate, db: Session = Depends(get_db)):

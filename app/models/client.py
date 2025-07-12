@@ -10,3 +10,4 @@ class Client(Base):
     phone = Column(String, index=True)
     address = Column(String)
     invoices = relationship("Invoice", back_populates="client")
+    recurrences = relationship("Recurrence", back_populates="client")  # <-- AGREGA ESTA LÍNEA

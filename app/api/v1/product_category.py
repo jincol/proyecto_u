@@ -10,7 +10,7 @@ from app.schemas.product_category import (
 from app.crud import product_category as crud
 from app.db.session import get_db
 
-router = APIRouter(prefix="/product-categories", tags=["product-categories"])
+router = APIRouter(prefix="/categories", tags=["categories"])  # CAMBIA AQUÍ
 
 @router.post("/", response_model=ProductCategoryOut, status_code=status.HTTP_201_CREATED)
 def create_category(category_in: ProductCategoryCreate, db: Session = Depends(get_db)):

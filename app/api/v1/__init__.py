@@ -2,3 +2,9 @@ from .client import router as client_router
 from .product import router as product_router
 from .invoice import router as invoice_router
 from .user import router as user_router
+from .recurrence import router as recurrence_router
+from .payment import router as payment_router
+from .notification import router as notification_router
+from .client_segment import router as client_segment_router
+from .product_category import router as product_category_router
+from .ml_result import router as ml_result_router
