@@ -7,4 +7,5 @@ from .payment import router as payment_router
 from .notification import router as notification_router
 from .client_segment import router as client_segment_router
 from .product_category import router as product_category_router
-from .ml_result import router as ml_result_router
+from .ml_result import router as ml_result_router 
+from .inventory import router as inventory_router

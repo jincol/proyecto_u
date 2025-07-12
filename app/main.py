@@ -9,11 +9,13 @@ from app.api.v1 import (
     notification,
     client_segment,
     product_category,
-    ml_result
+    ml_result,
+    inventory
 )
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.session import engine
 from app.models import Base
+
 
 # Crear todas las tablas
 Base.metadata.create_all(bind=engine)
@@ -33,6 +35,7 @@ app.include_router(notification.router)
 app.include_router(client_segment.router)
 app.include_router(product_category.router)
 app.include_router(ml_result.router)
+app.include_router(inventory.router) 
 
 app.add_middleware(
     CORSMiddleware,

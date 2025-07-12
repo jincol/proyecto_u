@@ -9,6 +9,7 @@ from .notification import Notification
 from .client_segment import ClientSegment, ClientSegmentRelation
 from .product_category import ProductCategory, ProductCategoryRelation
 from .ml_result import MLResult
+from .inventory import Inventory
 
 # Exporta todos los modelos para que Base los reconozca
 __all__ = [
@@ -24,5 +25,6 @@ __all__ = [
     "ClientSegmentRelation",
     "ProductCategory",
     "ProductCategoryRelation",
-    "MLResult"
+    "MLResult",
+    "Inventory"
 ]

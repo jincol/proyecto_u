@@ -8,5 +8,6 @@ class Product(Base):
     name = Column(String, index=True, nullable=False)
     description = Column(String)
     price = Column(Float, nullable=False)
-    stock = Column(Integer, default=0)
+    # stock = Column(Integer, default=0)
     invoices = relationship("Invoice", secondary="invoice_products", back_populates="products")
+    inventories = relationship("Inventory", back_populates="product")
