@@ -1,4 +1,4 @@
-import { Box, Grid, Paper, Typography } from "@mui/material";
+import { Box, Paper, Typography } from "@mui/material";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -27,18 +27,18 @@ export default function DashboardPage() {
           <Typography variant="h4" mb={2}>
             Dashboard
           </Typography>
-          <Grid container spacing={3} mb={4}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
             {kpiData.map((kpi) => (
-              <Grid item xs={12} sm={6} md={3} key={kpi.label}>
+              <Box key={kpi.label} sx={{ flex: '1 1 300px', minWidth: 250 }}>
                 <Paper elevation={3} sx={{ p: 2, textAlign: "center" }}>
                   <Typography variant="h6">{kpi.label}</Typography>
                   <Typography variant="h5" color="primary">{kpi.value}</Typography>
                 </Paper>
-              </Grid>
+              </Box>
             ))}
-          </Grid>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+          </Box>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ flex: '1 1 400px' }}>
               <Paper elevation={3} sx={{ p: 2 }}>
                 <Typography variant="h6" mb={2}>Cobros</Typography>
                 <ResponsiveContainer width="100%" height={250}>
@@ -52,15 +52,15 @@ export default function DashboardPage() {
                       outerRadius={80}
                       label
                     >
-                      {chartData.map((entry, index) => (
+                      {chartData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
               </Paper>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </Box>
       </Box>
     </Box>

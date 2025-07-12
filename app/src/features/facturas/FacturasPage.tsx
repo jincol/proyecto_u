@@ -1,4 +1,3 @@
-import React from "react";
-export default function DashboardPage() {
-  return <div>Dashboard principal</div>;
+export default function FacturasPage() {
+  return <div>Facturas</div>;
 }

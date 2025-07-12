@@ -4,7 +4,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const menu = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
@@ -16,16 +16,23 @@ const menu = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   return (
     <Drawer variant="permanent" sx={{ width: 220, "& .MuiDrawer-paper": { width: 220 } }}>
       <List>
         {menu.map(item => (
           <ListItem
-            button
             key={item.text}
-            component={Link}
-            to={item.path}
-            selected={location.pathname === item.path}
+            sx={{ 
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              },
+              ...(location.pathname === item.path && {
+                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+              }),
+            }}
+            onClick={() => navigate(item.path)}
           >
             <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />

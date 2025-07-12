@@ -1,69 +1,72 @@
-# React + TypeScript + Vite
+# Frontend - Sistema de Gestión de Facturas
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este es el frontend del sistema de gestión de facturas, construido con React + TypeScript + Vite.
 
-Currently, two official plugins are available:
+## 🚀 Tecnologías Utilizadas
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** - Librería de interfaces de usuario
+- **TypeScript** - Tipado estático para JavaScript
+- **Vite** - Herramienta de build y desarrollo
+- **Material-UI** - Componentes de interfaz
+- **React Router** - Enrutamiento
+- **Axios** - Cliente HTTP
+- **Recharts** - Gráficos y visualización
 
-## Expanding the ESLint configuration
+## 📁 Estructura del Proyecto
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/        # Componentes reutilizables
+├── features/          # Funcionalidades por módulo
+│   ├── dashboard/     # Panel de control
+│   ├── clientes/      # Gestión de clientes
+│   ├── facturas/      # Gestión de facturas
+│   ├── inventario/    # Gestión de productos
+│   └── auth/          # Autenticación
+├── pages/             # Páginas principales
+├── api/               # Servicios de API
+├── routes/            # Configuración de rutas
+├── store/             # Estado global
+└── types/             # Tipos TypeScript
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Comandos Disponibles
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# Desarrollo
+npm run dev
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Construcción
+npm run build
+
+# Linting
+npm run lint
+
+# Preview de producción
+npm run preview
 ```
+
+## 🔧 Configuración
+
+### Variables de Entorno
+Crea un archivo `.env.local` con:
+```bash
+VITE_API_URL=http://localhost:8000
+VITE_APP_NAME=Sistema de Gestión de Facturas
+```
+
+### Configuración de ESLint
+El proyecto incluye configuración de ESLint con reglas específicas para React y TypeScript.
+
+## 📚 Documentación Completa
+
+Para información completa sobre el proyecto, consulta:
+- [README.md](../README.md) - Información general del sistema
+- [TECHNICAL_DOCS.md](../TECHNICAL_DOCS.md) - Documentación técnica
+- [QUICK_START.md](../QUICK_START.md) - Guía de inicio rápido
+
+## 🌐 URLs de Desarrollo
+
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **Documentación API**: http://localhost:8000/docs

@@ -3,8 +3,15 @@ import { Box, Typography, Button, Table, TableHead, TableRow, TableCell, TableBo
 import { getClientes } from "../../api/clientes";
 import ClienteForm from "./ClienteForm";
 
+interface Cliente {
+  id: number;
+  nombre: string;
+  email: string;
+  telefono: string;
+}
+
 export default function ClientesPage() {
-  const [clientes, setClientes] = useState([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [openForm, setOpenForm] = useState(false);
 
   useEffect(() => {
