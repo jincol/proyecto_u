@@ -1,152 +1,76 @@
 import React, { useEffect, useState } from "react";
-import {
-  Box, Typography, Button, Stack, TextField, Autocomplete, Snackbar, Alert, CircularProgress
-} from "@mui/material";
+import { Box, Typography, Paper, TextField, InputAdornment, Button, CircularProgress } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import { getFacturas, deleteFactura } from "../../api/facturas";
 import FacturasTable from "./FacturasTable";
-import FacturaModal from "./FacturasModal";
-import type { Invoice } from "../../types/invoice";
-import {
-  getFacturas,
-  createFactura,
-  updateFactura,
-  deleteFactura,
-} from "../../api/facturas";
-
-// Si tienes endpoints para clientes/productos, ¡úsalos! Si no, deja los demo por ahora:
-const clientesDemo = [
-  { id: 1, name: "Cliente A" },
-  { id: 2, name: "Cliente B" },
-];
-const productosDemo = [
-  { product_id: 1, name: "Producto X" },
-  { product_id: 2, name: "Producto Y" },
-];
+import FacturasModal from "./FacturasModal";
 
 export default function FacturasPage() {
-  const [facturas, setFacturas] = useState<Invoice[]>([]);
+  const [facturas, setFacturas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [facturaEdit, setFacturaEdit] = useState<Invoice | undefined>(undefined);
-  const [snackbar, setSnackbar] = useState<{ open: boolean, msg: string } | null>(null);
-  const [filtroCliente, setFiltroCliente] = useState<{ id: number, name: string } | null>(null);
-  const [filtroFolio, setFiltroFolio] = useState("");
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [editFactura, setEditFactura] = useState(null);
 
-  useEffect(() => {
-    fetchFacturas();
-  }, []);
+  useEffect(() => { loadFacturas(); }, []);
 
-  const fetchFacturas = async () => {
+  const loadFacturas = () => {
     setLoading(true);
-    try {
-      const data = await getFacturas();
-      setFacturas(data);
-    } catch (err) {
-      setSnackbar({ open: true, msg: "Error cargando facturas" });
-    } finally {
-      setLoading(false);
-    }
+    getFacturas().then(setFacturas).finally(() => setLoading(false));
   };
 
-  // Filtrar facturas por cliente y folio
-  const facturasFiltradas = facturas.filter(f =>
-    (!filtroCliente || f.client_id === filtroCliente.id) &&
-    (f.folio?.toLowerCase().includes(filtroFolio.toLowerCase()))
+  const handleEdit = (factura) => {
+    setEditFactura(factura);
+    setModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    await deleteFactura(id);
+    loadFacturas();
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditFactura(null);
+    loadFacturas();
+  };
+
+  const filtered = facturas.filter(
+    f =>
+      f.folio.toLowerCase().includes(search.toLowerCase()) ||
+      (f.client_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleNuevaFactura = () => {
-    setFacturaEdit(undefined);
-    setModalOpen(true);
-  };
-
-  const handleEditarFactura = (factura: Invoice) => {
-    setFacturaEdit(factura);
-    setModalOpen(true);
-  };
-
-  const handleEliminarFactura = async (factura: Invoice) => {
-    if (window.confirm(`¿Eliminar factura ${factura.folio}?`)) {
-      try {
-        await deleteFactura(factura.id);
-        setSnackbar({ open: true, msg: "Factura eliminada" });
-        fetchFacturas();
-      } catch (err) {
-        setSnackbar({ open: true, msg: "Error eliminando factura" });
-      }
-    }
-  };
-
-  const handleGuardarFactura = async (data: Omit<Invoice, "id" | "folio" | "client_name">) => {
-    try {
-      if (facturaEdit) {
-        await updateFactura(facturaEdit.id, data);
-        setSnackbar({ open: true, msg: "Factura editada" });
-      } else {
-        await createFactura(data);
-        setSnackbar({ open: true, msg: "Factura agregada" });
-      }
-      setModalOpen(false);
-      fetchFacturas();
-    } catch (err) {
-      setSnackbar({ open: true, msg: "Error guardando factura" });
-    }
-  };
-
-  const handleRecargar = () => {
-    fetchFacturas();
-    setSnackbar({ open: true, msg: "Facturas recargadas" });
-  };
-
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" mb={2} fontWeight={600}>Gestión de Facturas</Typography>
-      <Stack direction="row" spacing={2} mb={2}>
-        <Button variant="contained" color="primary" onClick={handleNuevaFactura}>
-          Nueva factura
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h4" mb={3}>Gestión de Facturas</Typography>
+      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+        <Button variant="contained" color="primary" startIcon={<AddCircleOutlineIcon />} onClick={() => setModalOpen(true)}>
+          NUEVA FACTURA
         </Button>
-        <Button variant="outlined" color="secondary" onClick={handleRecargar}>
-          Recargar
+        <Button variant="outlined" color="secondary" onClick={loadFacturas}>
+          RECARGAR
         </Button>
-        <Autocomplete
-          options={clientesDemo}
-          getOptionLabel={o => o.name}
-          value={filtroCliente}
-          onChange={(_, v) => setFiltroCliente(v)}
-          sx={{ width: 180 }}
-          renderInput={params => <TextField {...params} label="Filtrar cliente" />}
-        />
         <TextField
-          label="Buscar folio"
-          value={filtroFolio}
-          onChange={e => setFiltroFolio(e.target.value)}
-          sx={{ width: 160 }}
+          label="Buscar folio o cliente"
+          variant="outlined"
+          size="small"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          InputProps={{
+            startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment>
+          }}
         />
-      </Stack>
-      {loading ? (
-        <CircularProgress />
-      ) : (
-        <FacturasTable
-          facturas={facturasFiltradas}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          onPageChange={(_, p) => setPage(p)}
-          onRowsPerPageChange={e => { setRowsPerPage(parseInt(e.target.value, 10) || 5); setPage(0); }}
-          onEdit={handleEditarFactura}
-          onDelete={handleEliminarFactura}
-        />
-      )}
-      <FacturaModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onGuardar={handleGuardarFactura}
-        invoice={facturaEdit}
-        clientes={clientesDemo}
-        productos={productosDemo}
-      />
-      <Snackbar open={!!snackbar?.open} autoHideDuration={2000} onClose={() => setSnackbar(null)}>
-        <Alert severity="success" variant="filled">{snackbar?.msg}</Alert>
-      </Snackbar>
+      </Box>
+      <Paper>
+        {loading ? (
+          <CircularProgress sx={{ m: 4 }} />
+        ) : (
+          <FacturasTable facturas={filtered} onEdit={handleEdit} onDelete={handleDelete} />
+        )}
+      </Paper>
+      <FacturasModal open={modalOpen} onClose={handleCloseModal} factura={editFactura} />
     </Box>
   );
 }

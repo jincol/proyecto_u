@@ -10,8 +10,8 @@ interface FacturaModalProps {
   onClose: () => void;
   onGuardar: (invoice: Omit<Invoice, "id" | "folio" | "client_name">) => void;
   invoice?: Invoice;
-  clientes: Array<{ id: number; name: string }>;
-  productos: Array<{ product_id: number; name: string }>;
+  clientes?: Array<{ id: number; name: string }>;
+  productos?: Array<{ product_id: number; name: string }>;
 }
 
 export default function FacturaModal({
@@ -19,8 +19,8 @@ export default function FacturaModal({
   onClose,
   onGuardar,
   invoice,
-  clientes,
-  productos,
+  clientes = [],
+  productos = [],
 }: FacturaModalProps) {
   const [form, setForm] = useState<Omit<Invoice, "id" | "folio" | "client_name">>({
     client_id: 0,
@@ -58,7 +58,7 @@ export default function FacturaModal({
   }, [invoice, open]);
 
   useEffect(() => {
-    const subtotal = form.products.reduce((acc, p) => acc + p.unit_price * p.quantity, 0);
+    const subtotal = (form.products ?? []).reduce((acc, p) => acc + (p.unit_price || 0) * (p.quantity || 0), 0);
     const taxes = subtotal * 0.18;
     const total = subtotal + taxes;
     setForm(f => ({ ...f, subtotal, taxes, total }));
@@ -77,7 +77,7 @@ export default function FacturaModal({
             <Autocomplete
               options={clientes}
               getOptionLabel={o => o.name}
-              value={clientes.find(c => c.id === form.client_id) || null}
+              value={(clientes ?? []).find(c => c.id === form.client_id) || null}
               onChange={(_, v) => handleChange("client_id", v?.id || 0)}
               renderInput={params => <TextField {...params} label="Cliente" required />}
             />
@@ -111,7 +111,7 @@ export default function FacturaModal({
                 <Autocomplete
                   options={productos}
                   getOptionLabel={o => o.name}
-                  value={productos.find(prod => prod.product_id === p.product_id) || null}
+                  value={(productos ?? []).find(prod => prod.product_id === p.product_id) || null}
                   onChange={(_, v) => {
                     const items = [...form.products];
                     items[i].product_id = v?.product_id || 0;

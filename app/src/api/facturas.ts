@@ -1,5 +1,4 @@
 import axios from "axios";
-
 const BASE_URL = "http://localhost:8000/invoices";
 
 // Obtener todas las facturas
@@ -16,9 +15,11 @@ export async function getFactura(id: number) {
 
 // Crear una factura nueva
 export async function createFactura(factura: {
+  folio: string;
   client_id: number;
   products: { product_id: number; quantity: number }[];
   total: number;
+  date: string;
   status?: string;
 }) {
   const res = await axios.post(BASE_URL, factura);

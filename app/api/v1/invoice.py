@@ -17,8 +17,7 @@ def create_invoice(invoice_in: InvoiceCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[InvoiceOut])
 def read_invoices(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    invoices = crud_invoice.get_invoices(db, skip=skip, limit=limit)
-    return invoices
+    return crud_invoice.get_invoices(db, skip=skip, limit=limit)
 
 @router.get("/{invoice_id}", response_model=InvoiceOut)
 def read_invoice(invoice_id: int, db: Session = Depends(get_db)):

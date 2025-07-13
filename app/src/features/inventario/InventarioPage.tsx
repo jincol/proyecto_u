@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import {
   Box,
   Typography,
@@ -16,73 +15,34 @@ import {
   TextField,
   InputAdornment,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Stack,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import { getInventario } from "../../api/inventario"; // <--- usa tu nuevo API
 
 export default function InventarioPage() {
-  const [productos, setProductos] = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [openModal, setOpenModal] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    stock: "",
-  });
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchProductos();
+    fetchInventario();
   }, []);
 
-  const fetchProductos = () => {
+  const fetchInventario = () => {
     setLoading(true);
-    axios.get("http://localhost:8000/products")
-      .then(res => setProductos(res.data))
+    getInventario()
+      .then(setItems)
       .finally(() => setLoading(false));
   };
 
-  const filtered = productos.filter(
-    prod =>
-      prod.name.toLowerCase().includes(search.toLowerCase()) ||
-      (prod.description || "").toLowerCase().includes(search.toLowerCase())
+  const filtered = items.filter(
+    item =>
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
+      (item.description || "").toLowerCase().includes(search.toLowerCase())
   );
-
-  const handleOpenModal = () => setOpenModal(true);
-  const handleCloseModal = () => {
-    setOpenModal(false);
-    setForm({ name: "", description: "", price: "", stock: "" });
-  };
-
-  const handleChange = e => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await axios.post("http://localhost:8000/products", {
-        name: form.name,
-        description: form.description,
-        price: parseFloat(form.price),
-        stock: parseInt(form.stock),
-      });
-      fetchProductos();
-      handleCloseModal();
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <Box sx={{ p: 4 }}>
@@ -91,7 +51,7 @@ export default function InventarioPage() {
           Inventario de Productos
         </Typography>
         <Tooltip title="Agregar producto">
-          <IconButton color="primary" onClick={handleOpenModal}>
+          <IconButton color="primary">
             <AddCircleOutlineIcon />
           </IconButton>
         </Tooltip>
@@ -137,20 +97,20 @@ export default function InventarioPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((prod) => (
-                  <TableRow key={prod.id}>
+                filtered.map((item) => (
+                  <TableRow key={item.id}>
                     <TableCell>
-                      <Typography fontWeight="bold">{prod.name}</Typography>
+                      <Typography fontWeight="bold">{item.name}</Typography>
                     </TableCell>
-                    <TableCell>{prod.description}</TableCell>
-                    <TableCell>${prod.price.toFixed(2)}</TableCell>
+                    <TableCell>{item.description}</TableCell>
+                    <TableCell>${item.price.toFixed(2)}</TableCell>
                     <TableCell>
                       <Chip
-                        label={prod.stock}
+                        label={item.quantity}
                         color={
-                          prod.stock === 0
+                          item.quantity === 0
                             ? "error"
-                            : prod.stock < 5
+                            : item.quantity < 5
                             ? "warning"
                             : "success"
                         }
@@ -177,66 +137,6 @@ export default function InventarioPage() {
           </Table>
         </TableContainer>
       )}
-
-      {/* Modal para agregar producto */}
-      <Dialog open={openModal} onClose={handleCloseModal} maxWidth="xs" fullWidth>
-        <DialogTitle>Agregar Producto</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} mt={1}>
-            <TextField
-              label="Nombre"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Descripción"
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              fullWidth
-            />
-            <TextField
-              label="Precio"
-              name="price"
-              value={form.price}
-              onChange={handleChange}
-              type="number"
-              required
-              fullWidth
-              inputProps={{ min: 0, step: "0.01" }}
-            />
-            <TextField
-              label="Stock"
-              name="stock"
-              value={form.stock}
-              onChange={handleChange}
-              type="number"
-              required
-              fullWidth
-              inputProps={{ min: 0 }}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal} disabled={saving}>Cancelar</Button>
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            color="primary"
-            disabled={
-              saving ||
-              !form.name ||
-              !form.price ||
-              !form.stock
-            }
-          >
-            {saving ? "Guardando..." : "Guardar"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }
