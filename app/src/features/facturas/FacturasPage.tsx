@@ -18,14 +18,18 @@ export default function FacturasPage() {
   const [editFactura, setEditFactura] = useState(null);
   const [clientes, setClientes] = useState([]);
   const [productos, setProductos] = useState([]);
-  // NUEVO: Estados para el modal de detalle
   const [detalleOpen, setDetalleOpen] = useState(false);
   const [facturaDetalle, setFacturaDetalle] = useState(null);
+  const [productosCatalogo, setProductosCatalogo] = useState([]);
 
   useEffect(() => {
     loadFacturas();
     fetchClientes();
     fetchProductos();
+    // Catálogo completo de productos (para cruzar en detalle)
+    axios.get("/api/products")
+      .then(res => setProductosCatalogo(res.data))
+      .catch(err => console.error("Error al cargar productos", err));
   }, []);
 
   const loadFacturas = () => {
@@ -70,10 +74,18 @@ export default function FacturasPage() {
     setModalOpen(true);
   };
 
-  // NUEVO: Función para mostrar el modal de detalle
-  const handleViewDetalle = (factura) => {
-    setFacturaDetalle(factura);
-    setDetalleOpen(true);
+  // ⚡️ FUNCION CLAVE: Al ver detalle, pide el detalle real al backend
+  const handleViewDetalle = async (factura) => {
+    try {
+      // ¡Pide el detalle real (no uses el objeto del listado)!
+      const res = await axios.get(`http://localhost:8000/invoices/${factura.id}`);
+      setFacturaDetalle(res.data);
+      setDetalleOpen(true);
+    } catch (error) {
+      alert("No se pudo cargar el detalle de la factura");
+      setFacturaDetalle(null);
+      setDetalleOpen(false);
+    }
   };
 
   const filtered = facturas.filter(
@@ -116,7 +128,7 @@ export default function FacturasPage() {
             facturas={filtered}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onViewDetalle={handleViewDetalle} // <-- NUEVO: ¡Aquí pasas el ojito!
+            onViewDetalle={handleViewDetalle} // ← ¡Aquí pasas la función que pide el detalle!
           />
         )}
       </Paper>
@@ -132,6 +144,7 @@ export default function FacturasPage() {
         open={detalleOpen}
         onClose={() => setDetalleOpen(false)}
         factura={facturaDetalle}
+        productos={productosCatalogo}
       />
     </Box>
   );
