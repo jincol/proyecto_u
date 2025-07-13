@@ -44,15 +44,8 @@ export default function FacturaModal({
 
   useEffect(() => {
     if (invoice) {
-      const { id, folio, client_name, subtotal, taxes, total, ...rest } = invoice;
-      setForm({
-        ...rest,
-        subtotal: subtotal ?? 0,
-        taxes: taxes ?? 0,
-        total: total ?? 0,
-        products: invoice.products ?? [],
-      });
-      console.log("Cargando factura para editar:", { ...rest, subtotal, taxes, total });
+      const { id, folio, client_name, ...rest } = invoice;
+      setForm({ ...rest });
     } else {
       setForm({
         client_id: 0,
@@ -67,7 +60,6 @@ export default function FacturaModal({
         status: "pending",
         products: [],
       });
-      console.log("Nueva factura, estado inicial");
     }
   }, [invoice, open]);
 
@@ -79,25 +71,16 @@ export default function FacturaModal({
     const taxes = subtotal * 0.18;
     const total = subtotal + taxes;
     setForm(f => ({ ...f, subtotal, taxes, total }));
-    console.log("Productos en factura:", form.products);
   }, [form.products, productos]);
 
   const handleChange = (field: string, value: any) => {
-    setForm(f => {
-      const newForm = { ...f, [field]: value };
-      console.log(`Cambio en campo '${field}':`, value, "Nuevo estado:", newForm);
-      return newForm;
-    });
+    setForm(f => ({ ...f, [field]: value }));
   };
 
   const handleProductFieldChange = (i: number, field: keyof ProductItem, value: any) => {
     const items = [...form.products];
     items[i] = { ...items[i], [field]: value };
-    setForm(f => {
-      const newForm = { ...f, products: items };
-      console.log(`Cambio en producto[${i}].${field}:`, value, "Nuevo estado productos:", items);
-      return newForm;
-    });
+    setForm(f => ({ ...f, products: items }));
   };
 
   const handleProductSelect = (i: number, v: { id: number } | null) => {
@@ -106,34 +89,41 @@ export default function FacturaModal({
       ...items[i],
       product_id: v?.id ?? 0,
     };
-    setForm(f => {
-      const newForm = { ...f, products: items };
-      console.log(`Seleccionado producto en fila ${i}:`, v, "Nuevo estado productos:", items);
-      return newForm;
-    });
+    setForm(f => ({ ...f, products: items }));
   };
 
   const handleAddProduct = () => {
-    setForm(f => {
-      const items = [...f.products, { product_id: 0, quantity: 1 }];
-      console.log("Agregando producto, productos ahora:", items);
-      return { ...f, products: items };
-    });
+    setForm(f => ({
+      ...f,
+      products: [...f.products, { product_id: 0, quantity: 1 }]
+    }));
   };
 
   const handleRemoveProduct = (i: number) => {
-    setForm(f => {
-      const items = [...f.products];
-      items.splice(i, 1);
-      console.log(`Quitando producto[${i}], productos ahora:`, items);
-      return { ...f, products: items };
-    });
+    const items = [...form.products];
+    items.splice(i, 1);
+    setForm(f => ({ ...f, products: items }));
   };
 
   const handleGuardar = async () => {
-    // Log completo del estado antes de guardar
-    console.log("Estado completo antes de guardar:", form);
-
+    if (!form.client_id) {
+      alert("Selecciona un cliente");
+      return;
+    }
+    if (!form.date) {
+      alert("Selecciona fecha de emisión");
+      return;
+    }
+    if (!form.products.length) {
+      alert("Agrega al menos un producto");
+      return;
+    }
+    for (const p of form.products) {
+      if (!p.product_id || p.quantity < 1) {
+        alert("Verifica todos los productos seleccionados. No puede haber producto vacío.");
+        return;
+      }
+    }
     const facturaPayload = {
       folio: `F${Math.floor(Math.random() * 10000)}`,
       client_id: form.client_id,
@@ -141,25 +131,17 @@ export default function FacturaModal({
         product_id: p.product_id,
         quantity: p.quantity,
       })),
-      subtotal: form.subtotal,    
-      taxes: form.taxes,
       total: form.total,
       date: new Date(form.date).toISOString(),
       status: form.status,
       notes: form.notes
     };
-    console.log("Payload enviado al backend:", facturaPayload);
-
     try {
-      const response = await createFactura(facturaPayload);
-      console.log("Respuesta recibida del backend:", response);
+      await createFactura(facturaPayload);
       if (onGuardar) onGuardar(facturaPayload);
       onClose();
     } catch (err) {
       console.error("Error al guardar en backend:", err);
-      if (err.response) {
-        console.error("Respuesta de error del backend:", err.response.data);
-      }
       alert("Error al guardar la factura. Revisa consola.");
     }
   };
@@ -226,24 +208,9 @@ export default function FacturaModal({
           </Button>
         </Box>
         <Box display="grid" gap={2} gridTemplateColumns="repeat(3, 1fr)" mt={2}>
-          <TextField
-            label="Subtotal"
-            value={(form.subtotal ?? 0).toFixed(2)}
-            fullWidth
-            InputProps={{ readOnly: true }}
-          />
-          <TextField
-            label="IGV"
-            value={(form.taxes ?? 0).toFixed(2)}
-            fullWidth
-            InputProps={{ readOnly: true }}
-          />
-          <TextField
-            label="Total"
-            value={(form.total ?? 0).toFixed(2)}
-            fullWidth
-            InputProps={{ readOnly: true }}
-          />
+          <TextField label="Subtotal" value={form.subtotal.toFixed(2)} fullWidth InputProps={{ readOnly: true }} />
+          <TextField label="IGV" value={form.taxes.toFixed(2)} fullWidth InputProps={{ readOnly: true }} />
+          <TextField label="Total" value={form.total.toFixed(2)} fullWidth InputProps={{ readOnly: true }} />
         </Box>
         <Box display="grid" gap={2} gridTemplateColumns="repeat(3, 1fr)" mt={2}>
           <TextField

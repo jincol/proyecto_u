@@ -7,6 +7,7 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { getFacturas, deleteFactura } from "../../api/facturas";
 import FacturasTable from "./FacturasTable";
 import FacturasModal from "./FacturasModal";
+import FacturaDetalleModal from "./FacturaDetalleModal";
 import axios from "axios";
 
 export default function FacturasPage() {
@@ -17,8 +18,10 @@ export default function FacturasPage() {
   const [editFactura, setEditFactura] = useState(null);
   const [clientes, setClientes] = useState([]);
   const [productos, setProductos] = useState([]);
+  // NUEVO: Estados para el modal de detalle
+  const [detalleOpen, setDetalleOpen] = useState(false);
+  const [facturaDetalle, setFacturaDetalle] = useState(null);
 
-  // Cargar facturas, clientes y productos al montar
   useEffect(() => {
     loadFacturas();
     fetchClientes();
@@ -32,7 +35,6 @@ export default function FacturasPage() {
       .finally(() => setLoading(false));
   };
 
-  // Cargar clientes
   const fetchClientes = async () => {
     try {
       const res = await axios.get("http://localhost:8000/clients");
@@ -40,7 +42,6 @@ export default function FacturasPage() {
     } catch { setClientes([]); }
   };
 
-  // Cargar productos
   const fetchProductos = async () => {
     try {
       const res = await axios.get("http://localhost:8000/products");
@@ -67,6 +68,12 @@ export default function FacturasPage() {
   const handleNuevaFactura = () => {
     setEditFactura(null);
     setModalOpen(true);
+  };
+
+  // NUEVO: Función para mostrar el modal de detalle
+  const handleViewDetalle = (factura) => {
+    setFacturaDetalle(factura);
+    setDetalleOpen(true);
   };
 
   const filtered = facturas.filter(
@@ -105,7 +112,12 @@ export default function FacturasPage() {
         {loading ? (
           <CircularProgress sx={{ m: 4 }} />
         ) : (
-          <FacturasTable facturas={filtered} onEdit={handleEdit} onDelete={handleDelete} />
+          <FacturasTable
+            facturas={filtered}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onViewDetalle={handleViewDetalle} // <-- NUEVO: ¡Aquí pasas el ojito!
+          />
         )}
       </Paper>
       <FacturasModal
@@ -114,7 +126,12 @@ export default function FacturasPage() {
         invoice={editFactura}
         clientes={clientes}
         productos={productos}
-        onGuardar={handleCloseModal} // este debe guardar y recargar
+        onGuardar={handleCloseModal}
+      />
+      <FacturaDetalleModal
+        open={detalleOpen}
+        onClose={() => setDetalleOpen(false)}
+        factura={facturaDetalle}
       />
     </Box>
   );

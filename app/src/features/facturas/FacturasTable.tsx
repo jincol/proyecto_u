@@ -4,12 +4,13 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
-export default function FacturasTable({ facturas, onEdit, onDelete }) {
+export default function FacturasTable({ facturas, onEdit, onDelete, onViewDetalle }) {
   return (
     <TableContainer>
       <Table>
-        <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
+        <TableHead>
           <TableRow>
             <TableCell>Folio</TableCell>
             <TableCell>Fecha</TableCell>
@@ -28,12 +29,12 @@ export default function FacturasTable({ facturas, onEdit, onDelete }) {
             facturas.map(f => (
               <TableRow key={f.id}>
                 <TableCell>{f.folio}</TableCell>
-                <TableCell>{new Date(f.date).toLocaleDateString()}</TableCell>
+                <TableCell>{f.date ? new Date(f.date).toLocaleDateString() : "--"}</TableCell>
                 <TableCell>{f.client_name}</TableCell>
-                <TableCell>${f.total.toFixed(2)}</TableCell>
+                <TableCell>{f.total !== undefined ? `$${f.total.toFixed(2)}` : "--"}</TableCell>
                 <TableCell>
                   <Chip
-                    label={f.status}
+                    label={f.status === "paid" ? "Pagada" : f.status === "pending" ? "Pendiente" : f.status === "cancelled" ? "Cancelada" : f.status}
                     color={
                       f.status === "paid"
                         ? "success"
@@ -47,6 +48,11 @@ export default function FacturasTable({ facturas, onEdit, onDelete }) {
                   />
                 </TableCell>
                 <TableCell align="right">
+                  <Tooltip title="Ver detalle">
+                    <IconButton size="small" color="info" onClick={() => onViewDetalle(f)}>
+                      <VisibilityIcon />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="Editar">
                     <IconButton size="small" color="primary" onClick={() => onEdit(f)}>
                       <EditIcon />

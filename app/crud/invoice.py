@@ -80,6 +80,7 @@ def update_invoice(db: Session, invoice_id: int, invoice: InvoiceUpdate):
     return db_invoice
 
 def cancel_invoice(db: Session, invoice_id: int):
+
     db_invoice = get_invoice(db, invoice_id)
     if not db_invoice:
         return None
@@ -87,3 +88,37 @@ def cancel_invoice(db: Session, invoice_id: int):
     db.commit()
     db.refresh(db_invoice)
     return db_invoice
+
+def get_invoice_detail(db, invoice_id):
+    inv = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not inv:
+        return None
+    client_name = inv.client.name if inv.client else ""
+    prod_rows = db.execute(
+        invoice_products.select().where(invoice_products.c.invoice_id == inv.id)
+    ).fetchall()
+    products = []
+    for row in prod_rows:
+        prod = db.query(Product).filter(Product.id == row.product_id).first()
+        products.append({
+            "product_id": prod.id,
+            "name": prod.name,
+            "description": prod.description,
+            "price": prod.price,
+            "quantity": row.quantity,
+            "subtotal": round((prod.price or 0) * (row.quantity or 0), 2)
+        })
+    return {
+        "id": inv.id,
+        "folio": inv.folio,
+        "client_id": inv.client_id,
+        "client_name": client_name,
+        "subtotal": getattr(inv, "subtotal", 0),
+        "taxes": getattr(inv, "taxes", 0),
+        "total": inv.total,
+        "date": inv.date.strftime("%Y-%m-%d") if inv.date else "",
+        "due_date": inv.due_date.strftime("%Y-%m-%d") if inv.due_date else "",
+        "notes": inv.notes or "",
+        "status": inv.status,
+        "products": products,
+    }

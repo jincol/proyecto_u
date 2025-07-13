@@ -80,3 +80,11 @@ def update_invoice(invoice_id: int, invoice_update: InvoiceUpdate, db: Session =
             status_code=409,
             detail="No se puede editar una factura anulada. Si necesita realizar cambios, contacto al ADMINISTRADOR"
         )
+    
+@router.get("/{invoice_id}", response_model=None)
+def get_invoice_detail(invoice_id: int, db: Session = Depends(get_db)):
+    factura = crud_invoice.get_invoice_detail(db, invoice_id)
+    if not factura:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    return factura
+
