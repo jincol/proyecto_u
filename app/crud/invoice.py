@@ -79,10 +79,11 @@ def update_invoice(db: Session, invoice_id: int, invoice: InvoiceUpdate):
     db.refresh(db_invoice)
     return db_invoice
 
-def delete_invoice(db: Session, invoice_id: int):
+def cancel_invoice(db: Session, invoice_id: int):
     db_invoice = get_invoice(db, invoice_id)
     if not db_invoice:
         return None
-    db.delete(db_invoice)
+    db_invoice.status = "cancelled"
     db.commit()
+    db.refresh(db_invoice)
     return db_invoice
