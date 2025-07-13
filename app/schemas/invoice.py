@@ -10,6 +10,8 @@ class InvoiceBase(BaseModel):
     folio: str
     client_id: int
     products: List[InvoiceProduct]
+    subtotal: float            
+    taxes: float               
     total: float
     date: datetime
     status: Optional[str] = "pending"
@@ -28,10 +30,14 @@ class InvoiceOut(BaseModel):
     folio: str
     client_id: int
     client_name: Optional[str]
+    subtotal: float
+    taxes: float
     total: float
-    date: datetime
+    date: str
+    due_date: Optional[str]
     status: str
-    notes: Optional[str] = None  # <-- ESTA LÍNEA ES LA SOLUCIÓN
-
+    notes: Optional[str]
+    products: List[InvoiceProduct]
+    
     class Config:
         from_attributes = True

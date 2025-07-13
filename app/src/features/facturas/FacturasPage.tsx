@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Paper, TextField, InputAdornment, Button, CircularProgress } from "@mui/material";
+import {
+  Box, Typography, Paper, TextField, InputAdornment, Button, CircularProgress
+} from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { getFacturas, deleteFactura } from "../../api/facturas";
 import FacturasTable from "./FacturasTable";
 import FacturasModal from "./FacturasModal";
+import axios from "axios";
 
 export default function FacturasPage() {
   const [facturas, setFacturas] = useState([]);
@@ -12,12 +15,37 @@ export default function FacturasPage() {
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editFactura, setEditFactura] = useState(null);
+  const [clientes, setClientes] = useState([]);
+  const [productos, setProductos] = useState([]);
 
-  useEffect(() => { loadFacturas(); }, []);
+  // Cargar facturas, clientes y productos al montar
+  useEffect(() => {
+    loadFacturas();
+    fetchClientes();
+    fetchProductos();
+  }, []);
 
   const loadFacturas = () => {
     setLoading(true);
-    getFacturas().then(setFacturas).finally(() => setLoading(false));
+    getFacturas()
+      .then(setFacturas)
+      .finally(() => setLoading(false));
+  };
+
+  // Cargar clientes
+  const fetchClientes = async () => {
+    try {
+      const res = await axios.get("http://localhost:8000/clients");
+      setClientes(res.data);
+    } catch { setClientes([]); }
+  };
+
+  // Cargar productos
+  const fetchProductos = async () => {
+    try {
+      const res = await axios.get("http://localhost:8000/products");
+      setProductos(res.data);
+    } catch { setProductos([]); }
   };
 
   const handleEdit = (factura) => {
@@ -36,9 +64,14 @@ export default function FacturasPage() {
     loadFacturas();
   };
 
+  const handleNuevaFactura = () => {
+    setEditFactura(null);
+    setModalOpen(true);
+  };
+
   const filtered = facturas.filter(
     f =>
-      f.folio.toLowerCase().includes(search.toLowerCase()) ||
+      f.folio?.toLowerCase().includes(search.toLowerCase()) ||
       (f.client_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
@@ -46,7 +79,12 @@ export default function FacturasPage() {
     <Box sx={{ p: 4 }}>
       <Typography variant="h4" mb={3}>Gestión de Facturas</Typography>
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-        <Button variant="contained" color="primary" startIcon={<AddCircleOutlineIcon />} onClick={() => setModalOpen(true)}>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddCircleOutlineIcon />}
+          onClick={handleNuevaFactura}
+        >
           NUEVA FACTURA
         </Button>
         <Button variant="outlined" color="secondary" onClick={loadFacturas}>
@@ -70,7 +108,14 @@ export default function FacturasPage() {
           <FacturasTable facturas={filtered} onEdit={handleEdit} onDelete={handleDelete} />
         )}
       </Paper>
-      <FacturasModal open={modalOpen} onClose={handleCloseModal} factura={editFactura} />
+      <FacturasModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        invoice={editFactura}
+        clientes={clientes}
+        productos={productos}
+        onGuardar={handleCloseModal} // este debe guardar y recargar
+      />
     </Box>
   );
 }

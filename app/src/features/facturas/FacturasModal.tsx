@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from "react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, TextField, Grid, Autocomplete, MenuItem, Box
+  Button, TextField, Autocomplete, MenuItem, Box
 } from "@mui/material";
-import type { Invoice, ProductItem } from "../../types/invoice";
+import { createFactura } from "../../api/facturas";
+
+interface ProductItem {
+  product_id: number;
+  quantity: number;
+}
 
 interface FacturaModalProps {
   open: boolean;
   onClose: () => void;
-  onGuardar: (invoice: Omit<Invoice, "id" | "folio" | "client_name">) => void;
-  invoice?: Invoice;
+  onGuardar: (invoice: any) => void;
+  invoice?: any;
   clientes?: Array<{ id: number; name: string }>;
-  productos?: Array<{ product_id: number; name: string }>;
+  productos?: Array<{ id: number; name: string; price?: number }>;
 }
 
 export default function FacturaModal({
@@ -22,7 +27,8 @@ export default function FacturaModal({
   clientes = [],
   productos = [],
 }: FacturaModalProps) {
-  const [form, setForm] = useState<Omit<Invoice, "id" | "folio" | "client_name">>({
+
+  const [form, setForm] = useState({
     client_id: 0,
     date: "",
     due_date: "",
@@ -33,13 +39,20 @@ export default function FacturaModal({
     payment_method: "",
     accounts_receivable: 0,
     status: "pending",
-    products: [],
+    products: [] as ProductItem[],
   });
 
   useEffect(() => {
     if (invoice) {
-      const { id, folio, client_name, ...rest } = invoice;
-      setForm({ ...rest });
+      const { id, folio, client_name, subtotal, taxes, total, ...rest } = invoice;
+      setForm({
+        ...rest,
+        subtotal: subtotal ?? 0,
+        taxes: taxes ?? 0,
+        total: total ?? 0,
+        products: invoice.products ?? [],
+      });
+      console.log("Cargando factura para editar:", { ...rest, subtotal, taxes, total });
     } else {
       setForm({
         client_id: 0,
@@ -54,177 +67,215 @@ export default function FacturaModal({
         status: "pending",
         products: [],
       });
+      console.log("Nueva factura, estado inicial");
     }
   }, [invoice, open]);
 
   useEffect(() => {
-    const subtotal = (form.products ?? []).reduce((acc, p) => acc + (p.unit_price || 0) * (p.quantity || 0), 0);
+    const subtotal = (form.products ?? []).reduce((acc, p) => {
+      const prod = productos.find(prod => prod.id === p.product_id);
+      return acc + ((prod?.price || 0) * (p.quantity || 0));
+    }, 0);
     const taxes = subtotal * 0.18;
     const total = subtotal + taxes;
     setForm(f => ({ ...f, subtotal, taxes, total }));
-  }, [form.products]);
+    console.log("Productos en factura:", form.products);
+  }, [form.products, productos]);
 
-  const handleChange = (field: keyof typeof form, value: any) => {
-    setForm(f => ({ ...f, [field]: value }));
+  const handleChange = (field: string, value: any) => {
+    setForm(f => {
+      const newForm = { ...f, [field]: value };
+      console.log(`Cambio en campo '${field}':`, value, "Nuevo estado:", newForm);
+      return newForm;
+    });
+  };
+
+  const handleProductFieldChange = (i: number, field: keyof ProductItem, value: any) => {
+    const items = [...form.products];
+    items[i] = { ...items[i], [field]: value };
+    setForm(f => {
+      const newForm = { ...f, products: items };
+      console.log(`Cambio en producto[${i}].${field}:`, value, "Nuevo estado productos:", items);
+      return newForm;
+    });
+  };
+
+  const handleProductSelect = (i: number, v: { id: number } | null) => {
+    const items = [...form.products];
+    items[i] = {
+      ...items[i],
+      product_id: v?.id ?? 0,
+    };
+    setForm(f => {
+      const newForm = { ...f, products: items };
+      console.log(`Seleccionado producto en fila ${i}:`, v, "Nuevo estado productos:", items);
+      return newForm;
+    });
+  };
+
+  const handleAddProduct = () => {
+    setForm(f => {
+      const items = [...f.products, { product_id: 0, quantity: 1 }];
+      console.log("Agregando producto, productos ahora:", items);
+      return { ...f, products: items };
+    });
+  };
+
+  const handleRemoveProduct = (i: number) => {
+    setForm(f => {
+      const items = [...f.products];
+      items.splice(i, 1);
+      console.log(`Quitando producto[${i}], productos ahora:`, items);
+      return { ...f, products: items };
+    });
+  };
+
+  const handleGuardar = async () => {
+    // Log completo del estado antes de guardar
+    console.log("Estado completo antes de guardar:", form);
+
+    const facturaPayload = {
+      folio: `F${Math.floor(Math.random() * 10000)}`,
+      client_id: form.client_id,
+      products: form.products.map(p => ({
+        product_id: p.product_id,
+        quantity: p.quantity,
+      })),
+      subtotal: form.subtotal,    
+      taxes: form.taxes,
+      total: form.total,
+      date: new Date(form.date).toISOString(),
+      status: form.status,
+      notes: form.notes
+    };
+    console.log("Payload enviado al backend:", facturaPayload);
+
+    try {
+      const response = await createFactura(facturaPayload);
+      console.log("Respuesta recibida del backend:", response);
+      if (onGuardar) onGuardar(facturaPayload);
+      onClose();
+    } catch (err) {
+      console.error("Error al guardar en backend:", err);
+      if (err.response) {
+        console.error("Respuesta de error del backend:", err.response.data);
+      }
+      alert("Error al guardar la factura. Revisa consola.");
+    }
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>{invoice ? "Editar factura" : "Nueva factura"}</DialogTitle>
       <DialogContent>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+        <Box display="grid" gap={2} gridTemplateColumns="repeat(3, 1fr)">
+          <Autocomplete
+            options={clientes}
+            getOptionLabel={o => o.name}
+            value={clientes.find(c => c.id === form.client_id) || null}
+            onChange={(_, v) => handleChange("client_id", v?.id || 0)}
+            renderInput={params => <TextField {...params} label="Cliente*" required fullWidth />}
+          />
+          <TextField
+            label="Fecha emisión"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={form.date}
+            onChange={e => handleChange("date", e.target.value)}
+            required
+            fullWidth
+          />
+          <TextField
+            label="Fecha vencimiento"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={form.due_date}
+            onChange={e => handleChange("due_date", e.target.value)}
+            required
+            fullWidth
+          />
+        </Box>
+        {(form.products ?? []).map((p, i) => (
+          <Box key={i} display="grid" gap={2} gridTemplateColumns="2fr 1fr 1fr 1fr" alignItems="center" margin="10px 0">
             <Autocomplete
-              options={clientes}
+              options={productos}
               getOptionLabel={o => o.name}
-              value={(clientes ?? []).find(c => c.id === form.client_id) || null}
-              onChange={(_, v) => handleChange("client_id", v?.id || 0)}
-              renderInput={params => <TextField {...params} label="Cliente" required />}
+              value={productos.find(prod => prod.id === p.product_id) || null}
+              onChange={(_, v) => handleProductSelect(i, v)}
+              renderInput={params => <TextField {...params} label="Producto" fullWidth />}
             />
-          </Grid>
-          <Grid item xs={6} sm={3}>
             <TextField
-              label="Fecha emisión"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={form.date}
-              onChange={e => handleChange("date", e.target.value)}
-              fullWidth
-              required
-            />
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <TextField
-              label="Fecha vencimiento"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={form.due_date}
-              onChange={e => handleChange("due_date", e.target.value)}
-              fullWidth
-              required
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Box mb={1}>Productos:</Box>
-            {(form.products ?? []).map((p, i) => (
-              <Box key={i} display="flex" gap={1} mb={1}>
-                <Autocomplete
-                  options={productos}
-                  getOptionLabel={o => o.name}
-                  value={(productos ?? []).find(prod => prod.product_id === p.product_id) || null}
-                  onChange={(_, v) => {
-                    const items = [...form.products];
-                    items[i].product_id = v?.product_id || 0;
-                    items[i].name = v?.name || "";
-                    handleChange("products", items);
-                  }}
-                  sx={{ flex: 2 }}
-                  renderInput={params => <TextField {...params} label="Producto" />}
-                />
-                <TextField
-                  type="number"
-                  label="Cantidad"
-                  value={p.quantity}
-                  onChange={e => {
-                    const items = [...form.products];
-                    items[i].quantity = Number(e.target.value);
-                    handleChange("products", items);
-                  }}
-                  sx={{ flex: 1 }}
-                />
-                <TextField
-                  type="number"
-                  label="Precio"
-                  value={p.unit_price}
-                  onChange={e => {
-                    const items = [...form.products];
-                    items[i].unit_price = Number(e.target.value);
-                    handleChange("products", items);
-                  }}
-                  sx={{ flex: 1 }}
-                />
-                <Button
-                  color="error"
-                  onClick={() => {
-                    const items = [...form.products];
-                    items.splice(i, 1);
-                    handleChange("products", items);
-                  }}
-                >
-                  Quitar
-                </Button>
-              </Box>
-            ))}
-            <Button
-              variant="outlined"
-              onClick={() =>
-                handleChange("products", [
-                  ...form.products,
-                  { product_id: 0, name: "", quantity: 1, unit_price: 0 }
-                ])
-              }
-            >
-              + Producto
-            </Button>
-          </Grid>
-          <Grid item xs={4}>
-            <TextField label="Subtotal" value={form.subtotal.toFixed(2)} fullWidth InputProps={{ readOnly: true }} />
-          </Grid>
-          <Grid item xs={4}>
-            <TextField label="IGV" value={form.taxes.toFixed(2)} fullWidth InputProps={{ readOnly: true }} />
-          </Grid>
-          <Grid item xs={4}>
-            <TextField label="Total" value={form.total.toFixed(2)} fullWidth InputProps={{ readOnly: true }} />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              select
-              label="Método de pago"
-              value={form.payment_method || ""}
-              onChange={e => handleChange("payment_method", e.target.value)}
-              fullWidth
-            >
-              <MenuItem value="efectivo">Efectivo</MenuItem>
-              <MenuItem value="transferencia">Transferencia</MenuItem>
-              <MenuItem value="tarjeta">Tarjeta</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              select
-              label="Estado"
-              value={form.status}
-              onChange={e => handleChange("status", e.target.value)}
-              fullWidth
-            >
-              <MenuItem value="pending">Pendiente</MenuItem>
-              <MenuItem value="paid">Pagada</MenuItem>
-              <MenuItem value="cancelled">Cancelada</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              label="Notas"
-              value={form.notes}
-              onChange={e => handleChange("notes", e.target.value)}
-              fullWidth
-              multiline
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              label="Cuentas por cobrar"
               type="number"
-              value={form.accounts_receivable ?? 0}
-              onChange={e => handleChange("accounts_receivable", Number(e.target.value))}
+              label="Cantidad"
+              value={p.quantity}
+              onChange={e => handleProductFieldChange(i, "quantity", Number(e.target.value))}
               fullWidth
             />
-          </Grid>
-        </Grid>
+            <Button
+              color="error"
+              size="small"
+              onClick={() => handleRemoveProduct(i)}
+            >
+              Quitar
+            </Button>
+          </Box>
+        ))}
+        <Box sx={{ mt: 2 }}>
+          <Button variant="outlined" fullWidth onClick={handleAddProduct}>
+            + AGREGAR PRODUCTO
+          </Button>
+        </Box>
+        <Box display="grid" gap={2} gridTemplateColumns="repeat(3, 1fr)" mt={2}>
+          <TextField
+            label="Subtotal"
+            value={(form.subtotal ?? 0).toFixed(2)}
+            fullWidth
+            InputProps={{ readOnly: true }}
+          />
+          <TextField
+            label="IGV"
+            value={(form.taxes ?? 0).toFixed(2)}
+            fullWidth
+            InputProps={{ readOnly: true }}
+          />
+          <TextField
+            label="Total"
+            value={(form.total ?? 0).toFixed(2)}
+            fullWidth
+            InputProps={{ readOnly: true }}
+          />
+        </Box>
+        <Box display="grid" gap={2} gridTemplateColumns="repeat(3, 1fr)" mt={2}>
+          <TextField
+            select
+            label="Estado"
+            value={form.status}
+            onChange={e => handleChange("status", e.target.value)}
+            fullWidth
+          >
+            <MenuItem value="pending">Pendiente</MenuItem>
+            <MenuItem value="paid">Pagada</MenuItem>
+            <MenuItem value="cancelled">Cancelada</MenuItem>
+          </TextField>
+          <TextField
+            label="Cuentas por cobrar"
+            type="number"
+            value={form.accounts_receivable ?? 0}
+            onChange={e => handleChange("accounts_receivable", Number(e.target.value))}
+            fullWidth
+          />
+          <TextField
+            label="Notas"
+            value={form.notes}
+            onChange={e => handleChange("notes", e.target.value)}
+            fullWidth
+            multiline
+          />
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
-        <Button onClick={() => onGuardar(form)} variant="contained" color="primary">
+        <Button onClick={handleGuardar} variant="contained" color="primary">
           Guardar
         </Button>
       </DialogActions>

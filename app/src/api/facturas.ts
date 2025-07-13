@@ -13,7 +13,7 @@ export async function getFactura(id: number) {
   return res.data;
 }
 
-// Crear una factura nueva
+
 export async function createFactura(factura: {
   folio: string;
   client_id: number;
@@ -21,6 +21,7 @@ export async function createFactura(factura: {
   total: number;
   date: string;
   status?: string;
+  notes?: string;
 }) {
   const res = await axios.post(BASE_URL, factura);
   return res.data;
