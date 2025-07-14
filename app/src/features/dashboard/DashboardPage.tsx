@@ -1,292 +1,298 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
   Grid,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Container,
-  Alert,
-  useTheme,
+  Paper,
+  Avatar,
   Stack,
+  CircularProgress,
+  Divider,
 } from "@mui/material";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
-  PieChart, Pie, Cell, LineChart, Line
-} from "recharts";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import PeopleIcon from "@mui/icons-material/People";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import PaidIcon from "@mui/icons-material/Paid";
+import axios from "axios";
+// Puedes usar recharts, chart.js, etc. Aquí simulo una gráfica simple:
+import { Bar } from "react-chartjs-2";
+import { Chart, registerables } from "chart.js";
+Chart.register(...registerables);
 
-const kpiColors = ["success", "info", "primary", "warning"];
-const pieColors = ["#1976d2", "#2e7d32", "#ed6c02", "#d32f2f", "#9c27b0"];
-const mlColors = ["#0288d1", "#43a047", "#f44336"];
+// COLORES NOTIFICACIONES
+const tipoColor = {
+  warning: "#FF9800",
+  info: "#2196F3",
+  error: "#F44336",
+  success: "#43A047",
+  email: "#2196F3",
+  whatsapp: "#FF9800",
+  push: "#F44336",
+};
+const tipoIcono = {
+  warning: <WarningAmberIcon sx={{ mr: 1 }} />,
+  info: <InfoOutlinedIcon sx={{ mr: 1 }} />,
+  error: <ErrorOutlineIcon sx={{ mr: 1 }} />,
+  success: <CheckCircleOutlineIcon sx={{ mr: 1 }} />,
+  email: <InfoOutlinedIcon sx={{ mr: 1 }} />,
+  whatsapp: <WarningAmberIcon sx={{ mr: 1 }} />,
+  push: <ErrorOutlineIcon sx={{ mr: 1 }} />,
+};
+
+function getKPI(notificaciones, type, filterMsg) {
+  if (!notificaciones) return 0;
+  return notificaciones.filter(
+    (n) =>
+      (type ? n.type === type : true) &&
+      (filterMsg ? n.message.toLowerCase().includes(filterMsg) : true)
+  ).length;
+}
 
 export default function DashboardPage() {
-  const theme = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [kpi, setKpi] = useState({
-    clientes: 0,
-    productos: 0,
-    facturas: 0,
-    cuentasPorCobrar: 0,
-  });
-  const [ventasMensuales, setVentasMensuales] = useState([]);
-  const [topProductos, setTopProductos] = useState([]);
-  const [mlPredVentas, setMlPredVentas] = useState([]);
-  const [mlChurn, setMlChurn] = useState([]);
   const [notificaciones, setNotificaciones] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Simulados: deberías traer estos datos de tu backend
+  const [clientes, setClientes] = useState(32);
+  const [facturas, setFacturas] = useState(124);
+  const [ventasMensuales, setVentasMensuales] = useState([
+    4000, 6500, 8000, 9100, 12000, 11300, 14000,
+  ]);
+  const [labelsMes, setLabelsMes] = useState([
+    "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul",
+  ]);
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      setLoading(true);
-      try {
-        // Datos reales o ficticios según tu backend
-        const [clientesRes, productosRes, facturasRes] = await Promise.all([
-          axios.get("http://localhost:8000/clients"),
-          axios.get("http://localhost:8000/products"),
-          axios.get("http://localhost:8000/invoices"),
-        ]);
-        setKpi({
-          clientes: clientesRes.data.length,
-          productos: productosRes.data.length,
-          facturas: facturasRes.data.length,
-          cuentasPorCobrar: facturasRes.data.filter(f => f.status === "pending").length,
-        });
-      } catch (error) {
-        setKpi({
-          clientes: 0,
-          productos: 0,
-          facturas: 0,
-          cuentasPorCobrar: 0,
-        });
-      }
-      setVentasMensuales([
-        { mes: "Ene", total: 12000 },
-        { mes: "Feb", total: 9800 },
-        { mes: "Mar", total: 13500 },
-        { mes: "Abr", total: 11000 },
-        { mes: "May", total: 12500 },
-        { mes: "Jun", total: 13750 },
-      ]);
-      setTopProductos([
-        { name: "Producto A", ventas: 120 },
-        { name: "Producto B", ventas: 98 },
-        { name: "Producto C", ventas: 135 },
-        { name: "Producto D", ventas: 110 },
-        { name: "Producto E", ventas: 90 },
-      ]);
-      // Gráfica ML: predicción de ventas
-      setMlPredVentas([
-        { mes: "Ene", real: 12000, pred: 11800 },
-        { mes: "Feb", real: 9800, pred: 10200 },
-        { mes: "Mar", real: 13500, pred: 13200 },
-        { mes: "Abr", real: 11000, pred: 11500 },
-        { mes: "May", real: 12500, pred: 12600 },
-        { mes: "Jun", real: 13750, pred: 14000 },
-      ]);
-      // ML Churn (clientes en riesgo de baja)
-      setMlChurn([
-        { name: "Jin", score: 0.82 },
-        { name: "Ana", score: 0.73 },
-        { name: "Luis", score: 0.65 },
-      ]);
-      // Notificaciones automáticas ficticias
-      setNotificaciones([
-        { type: "warning", msg: "Producto C está cerca de agotar stock." },
-        { type: "info", msg: "¡Nueva factura generada para cliente Jin!" },
-        { type: "error", msg: "Anomalía detectada: factura #1234 supera el promedio habitual." },
-        { type: "success", msg: "Predicción de ventas: ¡junio será un mes récord!" },
-      ]);
-      setLoading(false);
-    };
-    fetchDashboard();
+    fetchNotificaciones();
+    fetchClientes();
+    fetchFacturas();
+    // fetchPagosPendientes();
+    // fetchAlertasStock();
   }, []);
 
+  const fetchClientes = async () => {
+    const resp = await axios.get("http://localhost:8000/clients");
+    setClientes(Array.isArray(resp.data) ? resp.data.length : 0);
+  };
+
+  const fetchFacturas = async () => {
+    const resp = await axios.get("http://localhost:8000/invoices");
+    setFacturas(Array.isArray(resp.data) ? resp.data.length : 0);
+  };
+
+  // const fetchPagosPendientes = async () => {
+  //   const resp = await axios.get("http://localhost:8000/invoices/pending");
+  //   console.log("Pagos pendientes (response):", resp.data);
+  //   setPagosPendientes(Array.isArray(resp.data) ? resp.data.length : 0);
+  // };
+
+  // const fetchAlertasStock = async () => {
+  //     const resp = await axios.get("http://localhost:8000/products/low-stock?threshold=5");
+  //     console.log("Alertas de stock (response):", resp.data);
+  //     setAlertasStock(Array.isArray(resp.data) ? resp.data.length : 0);
+  // };
+  
+  const fetchNotificaciones = async () => {
+    setLoading(true);
+    try {
+      const resp = await axios.get("http://localhost:8000/notifications");
+      setNotificaciones(Array.isArray(resp.data) ? resp.data : []);
+    } catch {
+      setNotificaciones([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const notiGrouping = (type) =>
+    notificaciones
+      .filter((n) => n.type === type)
+      .sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
+      .slice(0, 4);
+
+  // KPI Cards
+  const kpiCards = [
+    {
+      label: "Clientes",
+      value: clientes,
+      icon: <PeopleIcon />,
+      color: "#1976d2",
+    },
+    {
+      label: "Facturas",
+      value: facturas,
+      icon: <MonetizationOnIcon />,
+      color: "#43A047",
+    },
+    {
+      label: "Notificaciones",
+      value: notificaciones.length,
+      icon: <ErrorOutlineIcon />,
+      color: "#F44336",
+    },
+    {
+      label: "Pagos pendientes",
+      value: getKPI(notificaciones, "email", "pendiente"),
+      icon: <PaidIcon />,
+      color: "#FF9800",
+    },
+    {
+      label: "Alertas de stock",
+      value: getKPI(notificaciones, "push", "stock"),
+      icon: <InventoryIcon />,
+      color: "#2196F3",
+    },
+  ];
+
+  // Gráfica ventas
+  const dataVentas = {
+    labels: labelsMes,
+    datasets: [
+      {
+        label: "Ventas ($)",
+        backgroundColor: "#1976d2",
+        data: ventasMensuales,
+        borderRadius: 8,
+      },
+    ],
+  };
+
   return (
-    <Box sx={{
-      bgcolor: theme.palette.background.default,
-      minHeight: "100vh",
-      py: { xs: 2, md: 4 },
-    }}>
-      <Container maxWidth="lg">
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            Dashboard
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Resumen visual de tu negocio y KPIs clave
-          </Typography>
-        </Box>
-
-        {/* Notificaciones alineadas y scroll horizontal si son muchas */}
-        <Box sx={{
-          mb: 2,
-          display: "flex",
-          gap: 2,
-          flexWrap: "wrap",
-          overflowX: "auto",
-        }}>
-          {notificaciones.map((n, idx) => (
-            <Alert key={idx} severity={n.type} variant="filled" sx={{ borderRadius: 2, minWidth: 320, flexGrow: 1 }}>
-              {n.msg}
-            </Alert>
-          ))}
-        </Box>
-
+    <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: "#f5f7fa", minHeight: "100vh" }}>
+      <Typography variant="h4" fontWeight={600} mb={2}>
+        Resumen visual de tu negocio y KPIs clave
+      </Typography>
+      {/* KPIs */}
+      <Grid container spacing={2} mb={2}>
+        {kpiCards.map((kpi) => (
+          <Grid item xs={12} sm={6} md={2.4} key={kpi.label}>
+            <Paper
+              elevation={4}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                p: 2,
+                borderRadius: 3,
+                bgcolor: kpi.color,
+                color: "#fff",
+                minHeight: 64,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+              }}
+            >
+              <Avatar sx={{ bgcolor: "#fff", color: kpi.color, mr: 2 }}>
+                {kpi.icon}
+              </Avatar>
+              <Box>
+                <Typography variant="h6" fontWeight={700} lineHeight={1}>
+                  {kpi.value}
+                </Typography>
+                <Typography variant="body2">{kpi.label}</Typography>
+              </Box>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
+      <Grid container spacing={2} mb={2}>
+        {/* Ventas mensuales */}
+        <Grid item xs={12} md={6}>
+          <Paper elevation={3} sx={{ p: 3, borderRadius: 3, minHeight: 300 }}>
+            <Typography variant="h6" fontWeight={700} mb={2}>
+              Evolución de ventas ($)
+            </Typography>
+            <Bar data={dataVentas} options={{
+              responsive: true,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { grid: { display: false } },
+                y: { grid: { color: "#eee" } },
+              },
+            }} />
+          </Paper>
+        </Grid>
+        {/* Productos más vendidos / Cuentas por cobrar */}
+        <Grid item xs={12} md={6}>
+          <Paper elevation={3} sx={{ p: 3, borderRadius: 3, minHeight: 300 }}>
+            <Typography variant="h6" fontWeight={700} mb={2}>
+              Cuentas por cobrar & Productos destacados
+            </Typography>
+            {/* Simulación: puedes cambiar por una tabla o gráfica real */}
+            <Stack spacing={1}>
+              <Box display="flex" alignItems="center">
+                <PaidIcon color="warning" sx={{ mr: 1 }} />
+                <Typography>
+                  $2,800 por cobrar (5 facturas vencidas)
+                </Typography>
+              </Box>
+              <Box display="flex" alignItems="center">
+                <InventoryIcon color="info" sx={{ mr: 1 }} />
+                <Typography>
+                  Diesel, Aceite, Filtros: <b>Stock bajo</b>
+                </Typography>
+              </Box>
+              <Box display="flex" alignItems="center">
+                <MonetizationOnIcon color="success" sx={{ mr: 1 }} />
+                <Typography>
+                  Producto más vendido: <b>Factura F0007</b>
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+        </Grid>
+      </Grid>
+      {/* NOTIFICACIONES AGRUPADAS */}
+      <Paper
+        elevation={2}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          mt: 2,
+          maxHeight: 350,
+          overflowY: "auto",
+          bgcolor: "#fff",
+        }}
+      >
+        <Typography variant="h6" fontWeight={700} mb={2}>
+          Notificaciones recientes
+        </Typography>
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", my: 12 }}>
-            <CircularProgress size={60} />
-          </Box>
+          <CircularProgress />
         ) : (
-          <>
-            {/* KPIs: una sola fila, bien alineados */}
-            <Grid container columns={12} spacing={5} mb={5} justifyContent="center">
-              {[
-                { label: "Clientes", value: kpi.clientes, chip: "Activos", color: kpiColors[0] },
-                { label: "Productos", value: kpi.productos, chip: "En stock", color: kpiColors[1] },
-                { label: "Facturas", value: kpi.facturas, chip: "Este mes", color: kpiColors[2] },
-                { label: "Cuentas por Cobrar", value: kpi.cuentasPorCobrar, chip: "Pendientes", color: kpiColors[3] }
-              ].map((item, idx) => (
-                <Grid
-                  key={item.label}
-                  gridColumn={{ xs: "span 12", sm: "span 6", md: "span 3" }}
-                  gridRow="span 1"
-                >
-                  <Card elevation={6} sx={{
-                    borderRadius: 3,
-                    minHeight: 120,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "0.2s",
-                    ":hover": { boxShadow: 12 },
-                  }}>
-                    <CardContent sx={{ textAlign: "center", p: 2 }}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        {item.label}
-                      </Typography>
-                      <Typography variant="h3" fontWeight={700} sx={{ fontSize: { xs: 36, md: 48 } }}>
-                        {item.value}
-                      </Typography>
-                      <Chip label={item.chip} color={item.color} size="small" sx={{ mt: 1 }} />
-                    </CardContent>
-                  </Card>
+          <Grid container spacing={2}>
+            {["warning", "error", "success", "info", "email", "whatsapp", "push"].map((type) =>
+              notiGrouping(type).map((n) => (
+                <Grid item xs={12} sm={6} md={4} key={n.id}>
+                  <Paper
+                    elevation={3}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      bgcolor: tipoColor[n.type] || "#eee",
+                      color: "#fff",
+                      py: 1.5,
+                      px: 2,
+                      mb: 1,
+                      borderRadius: 2,
+                      fontSize: 16,
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                    }}
+                  >
+                    {tipoIcono[n.type] || null}
+                    <span>{n.message}</span>
+                  </Paper>
                 </Grid>
-              ))}
-            </Grid>
-
-            {/* Primera fila de gráficas, 3 columnas iguales */}
-            <Grid container columns={12} spacing={3} mb={3}>
-              <Grid gridColumn={{ xs: "span 12", md: "span 4" }} gridRow="span 1">
-                <Card elevation={6} sx={{ borderRadius: 3, minHeight: 320, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <CardContent>
-                    <Typography variant="h6" fontWeight={600} mb={2}>
-                      Ventas Mensuales
-                    </Typography>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <BarChart data={ventasMensuales}>
-                        <XAxis dataKey="mes" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="total" fill={pieColors[0]} radius={[8, 8, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid gridColumn={{ xs: "span 12", md: "span 4" }} gridRow="span 1">
-                <Card elevation={6} sx={{ borderRadius: 3, minHeight: 320, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <CardContent>
-                    <Typography variant="h6" fontWeight={600} mb={2}>
-                      Productos Más Vendidos
-                    </Typography>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={topProductos}
-                          dataKey="ventas"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={70}
-                          label={({ name, ventas }) => `${name}: ${ventas}`}
-                        >
-                          {topProductos.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid gridColumn={{ xs: "span 12", md: "span 4" }} gridRow="span 1">
-                <Card elevation={6} sx={{ borderRadius: 3, minHeight: 320, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <CardContent>
-                    <Typography variant="h6" fontWeight={600} mb={2}>
-                      Predicción ML: Ventas vs. Predicción
-                    </Typography>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <LineChart data={mlPredVentas}>
-                        <XAxis dataKey="mes" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="real" stroke={mlColors[0]} strokeWidth={3} dot={{ r: 5 }} name="Ventas reales" />
-                        <Line type="monotone" dataKey="pred" stroke={mlColors[1]} strokeDasharray="6 2" strokeWidth={3} dot={{ r: 5 }} name="Predicción ML" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-
-            {/* Segunda fila de ML, 2 columnas iguales */}
-            <Grid container columns={12} spacing={3} mb={3}>
-              <Grid gridColumn={{ xs: "span 12", md: "span 6" }} gridRow="span 1">
-                <Card elevation={6} sx={{ borderRadius: 3, minHeight: 160, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <CardContent>
-                    <Typography variant="h6" fontWeight={600} mb={2}>
-                      ML: Clientes en riesgo de baja
-                    </Typography>
-                    <Stack spacing={1}>
-                      {mlChurn.map(cli => (
-                        <Box key={cli.name} sx={{ display: "flex", alignItems: "center" }}>
-                          <Chip
-                            label={cli.name}
-                            color="error"
-                            variant="outlined"
-                            sx={{ mr: 2 }}
-                          />
-                          <Typography variant="body1">
-                            Score de riesgo: <b>{Math.round(cli.score * 100)}%</b>
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid gridColumn={{ xs: "span 12", md: "span 6" }} gridRow="span 1">
-                <Card elevation={6} sx={{ borderRadius: 3, minHeight: 160, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <CardContent>
-                    <Typography variant="h6" fontWeight={600} mb={2}>
-                      ML: Recomendación de productos (próximamente)
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Aquí podrás ver recomendaciones personalizadas para tus clientes, basadas en Machine Learning y compras históricas.
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </>
+              ))
+            )}
+          </Grid>
         )}
-      </Container>
+      </Paper>
+      <Divider sx={{ my: 4 }} />
+      {/* Puedes seguir agregando secciones: ML, alertas, recomendaciones, etc */}
     </Box>
   );
 }

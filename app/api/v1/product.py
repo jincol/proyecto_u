@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status,Query
 from sqlalchemy.orm import Session
 from typing import List
 from app.schemas.product import ProductOut, ProductCreate, ProductUpdate
 from app.crud import product as crud_product
 from app.db.session import get_db
+from app.models.inventory import Inventory
 
 router = APIRouter(
     prefix="/products",

@@ -38,6 +38,6 @@ class InvoiceOut(BaseModel):
     status: str
     notes: Optional[str]
     products: List[InvoiceProduct]
-    
+
     class Config:
         from_attributes = True
