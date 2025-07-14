@@ -5,6 +5,7 @@ from app.schemas.product import ProductOut, ProductCreate, ProductUpdate
 from app.crud import product as crud_product
 from app.db.session import get_db
 from app.models.inventory import Inventory
+from app.models.product import Product
 
 router = APIRouter(
     prefix="/products",
@@ -15,6 +16,28 @@ router = APIRouter(
 def create_product(product_in: ProductCreate, db: Session = Depends(get_db)):
     db_product = crud_product.create_product(db, product_in)
     return db_product
+
+@router.get("/low-stock", response_model=List[ProductOut])
+def get_low_stock_products(
+    db: Session = Depends(get_db),
+    threshold: int = Query(5, description="Umbral para considerar stock bajo")
+):
+    productos = (
+        db.query(Product, Inventory.quantity)
+        .join(Inventory, Product.id == Inventory.product_id)
+        .filter(Inventory.quantity <= threshold)
+        .all()
+    )
+    resultado = []
+    for producto, cantidad in productos:
+        resultado.append(ProductOut(
+            id=producto.id,
+            name=producto.name,
+            description=producto.description,
+            price=producto.price,
+            quantity=cantidad
+        ))
+    return resultado
 
 @router.get("/", response_model=List[ProductOut])
 def read_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -41,3 +64,5 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product
+
+

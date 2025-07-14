@@ -16,6 +16,7 @@ class ProductUpdate(BaseModel):
 
 class ProductOut(ProductBase):
     id: int
+    quantity: Optional[int] = None 
 
     class Config:
         from_attributes = True

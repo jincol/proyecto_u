@@ -59,6 +59,7 @@ export default function DashboardPage() {
   // Simulados: deberías traer estos datos de tu backend
   const [clientes, setClientes] = useState(32);
   const [facturas, setFacturas] = useState(124);
+  const [alertasStock, setAlertasStock] = useState<number>(0);
   const [ventasMensuales, setVentasMensuales] = useState([
     4000, 6500, 8000, 9100, 12000, 11300, 14000,
   ]);
@@ -71,7 +72,7 @@ export default function DashboardPage() {
     fetchClientes();
     fetchFacturas();
     // fetchPagosPendientes();
-    // fetchAlertasStock();
+    fetchAlertasStock();
   }, []);
 
   const fetchClientes = async () => {
@@ -90,11 +91,11 @@ export default function DashboardPage() {
   //   setPagosPendientes(Array.isArray(resp.data) ? resp.data.length : 0);
   // };
 
-  // const fetchAlertasStock = async () => {
-  //     const resp = await axios.get("http://localhost:8000/products/low-stock?threshold=5");
-  //     console.log("Alertas de stock (response):", resp.data);
-  //     setAlertasStock(Array.isArray(resp.data) ? resp.data.length : 0);
-  // };
+  const fetchAlertasStock = async () => {
+      const resp = await axios.get("http://localhost:8000/products/low-stock?threshold=5");
+      console.log("Alertas de stock (response):", resp.data);
+      setAlertasStock(Array.isArray(resp.data) ? resp.data.length : 0);
+  };
   
   const fetchNotificaciones = async () => {
     setLoading(true);
@@ -144,7 +145,7 @@ export default function DashboardPage() {
     },
     {
       label: "Alertas de stock",
-      value: getKPI(notificaciones, "push", "stock"),
+      value: alertasStock,
       icon: <InventoryIcon />,
       color: "#2196F3",
     },
