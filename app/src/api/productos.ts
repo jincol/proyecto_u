@@ -19,7 +19,7 @@ export async function createProducto(producto: {
   name: string;
   description?: string;
   price: number;
-  stock?: number;
+  // stock?: number;
 }) {
   const res = await axios.post(BASE_URL, producto);
   return res.data;
@@ -34,5 +34,11 @@ export async function updateProducto(id: number, producto: any) {
 // Eliminar un producto
 export async function deleteProducto(id: number) {
   const res = await axios.delete(`${BASE_URL}/${id}`);
+  return res.data;
+}
+
+
+export async function getLowStockProductos(threshold = 5) {
+  const res = await axios.get(`${BASE_URL}/low-stock?threshold=${threshold}`);
   return res.data;
 }

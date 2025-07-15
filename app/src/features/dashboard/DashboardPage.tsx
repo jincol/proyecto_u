@@ -8,6 +8,7 @@ import {
   Stack,
   CircularProgress,
   Divider,
+  ButtonBase,
 } from "@mui/material";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import PeopleIcon from "@mui/icons-material/People";
@@ -18,9 +19,10 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import PaidIcon from "@mui/icons-material/Paid";
 import axios from "axios";
-// Puedes usar recharts, chart.js, etc. Aquí simulo una gráfica simple:
+import { getLowStockProductos } from "../../api/productos";
 import { Bar } from "react-chartjs-2";
 import { Chart, registerables } from "chart.js";
+import AlertasStockDrawer from "./AlertasStockDrawer";
 Chart.register(...registerables);
 
 // COLORES NOTIFICACIONES
@@ -60,6 +62,8 @@ export default function DashboardPage() {
   const [clientes, setClientes] = useState(32);
   const [facturas, setFacturas] = useState(124);
   const [alertasStock, setAlertasStock] = useState<number>(0);
+  const [alertasStockList, setAlertasStockList] = useState([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [ventasMensuales, setVentasMensuales] = useState([
     4000, 6500, 8000, 9100, 12000, 11300, 14000,
   ]);
@@ -92,9 +96,9 @@ export default function DashboardPage() {
   // };
 
   const fetchAlertasStock = async () => {
-      const resp = await axios.get("http://localhost:8000/products/low-stock?threshold=5");
-      console.log("Alertas de stock (response):", resp.data);
-      setAlertasStock(Array.isArray(resp.data) ? resp.data.length : 0);
+    const resp = await axios.get("http://localhost:8000/products/low-stock?threshold=5");
+    setAlertasStock(Array.isArray(resp.data) ? resp.data.length : 0);
+    setAlertasStockList(Array.isArray(resp.data) ? resp.data : []);
   };
   
   const fetchNotificaciones = async () => {
@@ -124,30 +128,35 @@ export default function DashboardPage() {
       value: clientes,
       icon: <PeopleIcon />,
       color: "#1976d2",
+      onClick: undefined,
     },
     {
       label: "Facturas",
       value: facturas,
       icon: <MonetizationOnIcon />,
       color: "#43A047",
+      onClick: undefined,
     },
     {
       label: "Notificaciones",
       value: notificaciones.length,
       icon: <ErrorOutlineIcon />,
       color: "#F44336",
+      onClick: undefined,
     },
     {
       label: "Pagos pendientes",
       value: getKPI(notificaciones, "email", "pendiente"),
       icon: <PaidIcon />,
       color: "#FF9800",
+      onClick: undefined,
     },
     {
       label: "Alertas de stock",
       value: alertasStock,
       icon: <InventoryIcon />,
       color: "#2196F3",
+      onClick: () => setDrawerOpen(true),
     },
   ];
 
@@ -173,32 +182,73 @@ export default function DashboardPage() {
       <Grid container spacing={2} mb={2}>
         {kpiCards.map((kpi) => (
           <Grid item xs={12} sm={6} md={2.4} key={kpi.label}>
-            <Paper
-              elevation={4}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                p: 2,
-                borderRadius: 3,
-                bgcolor: kpi.color,
-                color: "#fff",
-                minHeight: 64,
-                boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
-              }}
-            >
-              <Avatar sx={{ bgcolor: "#fff", color: kpi.color, mr: 2 }}>
-                {kpi.icon}
-              </Avatar>
-              <Box>
-                <Typography variant="h6" fontWeight={700} lineHeight={1}>
-                  {kpi.value}
-                </Typography>
-                <Typography variant="body2">{kpi.label}</Typography>
-              </Box>
-            </Paper>
+            {kpi.onClick ? (
+              <ButtonBase
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: 3,
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+                  display: "block",
+                }}
+                onClick={kpi.onClick}
+              >
+                <Paper
+                  elevation={4}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    p: 2,
+                    borderRadius: 3,
+                    bgcolor: kpi.color,
+                    color: "#fff",
+                    minHeight: 64,
+                  }}
+                >
+                  <Avatar sx={{ bgcolor: "#fff", color: kpi.color, mr: 2 }}>
+                    {kpi.icon}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" fontWeight={700} lineHeight={1}>
+                      {kpi.value}
+                    </Typography>
+                    <Typography variant="body2">{kpi.label}</Typography>
+                  </Box>
+                </Paper>
+              </ButtonBase>
+            ) : (
+              <Paper
+                elevation={4}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  p: 2,
+                  borderRadius: 3,
+                  bgcolor: kpi.color,
+                  color: "#fff",
+                  minHeight: 64,
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+                }}
+              >
+                <Avatar sx={{ bgcolor: "#fff", color: kpi.color, mr: 2 }}>
+                  {kpi.icon}
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" fontWeight={700} lineHeight={1}>
+                    {kpi.value}
+                  </Typography>
+                  <Typography variant="body2">{kpi.label}</Typography>
+                </Box>
+              </Paper>
+            )}
           </Grid>
         ))}
       </Grid>
+      <AlertasStockDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        productos={alertasStockList}
+      />
       <Grid container spacing={2} mb={2}>
         {/* Ventas mensuales */}
         <Grid item xs={12} md={6}>
