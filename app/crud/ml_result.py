@@ -22,3 +22,9 @@ def delete_ml_result(db: Session, ml_id: int):
     db.delete(ml_result)
     db.commit()
     return ml_result
+
+def get_last_ml_result_by_type(db, result_type, entity_id=None):
+    q = db.query(MLResult).filter(MLResult.type == result_type)
+    if entity_id is not None:
+        q = q.filter(MLResult.entity_id == entity_id)
+    return q.order_by(MLResult.created_at.desc()).first()

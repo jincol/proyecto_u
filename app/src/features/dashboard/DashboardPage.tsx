@@ -70,13 +70,15 @@ export default function DashboardPage() {
   const [labelsMes, setLabelsMes] = useState([
     "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul",
   ]);
+  // ML Prediction states
+  const [prediccionML, setPrediccionML] = useState(null);
 
   useEffect(() => {
     fetchNotificaciones();
     fetchClientes();
     fetchFacturas();
-    // fetchPagosPendientes();
     fetchAlertasStock();
+    fetchPrediccionML();
   }, []);
 
   const fetchClientes = async () => {
@@ -113,6 +115,16 @@ export default function DashboardPage() {
     }
   };
 
+  // ML Prediction fetch
+  const fetchPrediccionML = async () => {
+    try {
+      const resp = await axios.get("http://localhost:8000/ml-results/prediccion-ventas");
+      setPrediccionML(resp.data?.result || resp.data); // Ajusta según el output real de tu API
+    } catch {
+      setPrediccionML(null);
+    }
+  };
+
   const notiGrouping = (type) =>
     notificaciones
       .filter((n) => n.type === type)
@@ -121,7 +133,7 @@ export default function DashboardPage() {
       )
       .slice(0, 4);
 
-  // KPI Cards
+  // KPI Cards, incluye la de ML
   const kpiCards = [
     {
       label: "Clientes",
@@ -158,16 +170,35 @@ export default function DashboardPage() {
       color: "#2196F3",
       onClick: () => setDrawerOpen(true),
     },
+    {
+      label: "Predicción ML",
+      value: prediccionML?.ventas_predichas 
+        ? `S/ ${Number(prediccionML.ventas_predichas).toLocaleString("es-PE", { maximumFractionDigits: 2 })}` 
+        : "-",
+      icon: <MonetizationOnIcon />,
+      color: "#2ecc40",
+      onClick: undefined,
+    },
   ];
 
-  // Gráfica ventas
+  // Gráfica ventas: agrega la predicción como barra extra si hay
+  const labelsMesConML = prediccionML?.periodo_predicho
+    ? [...labelsMes, prediccionML.periodo_predicho]
+    : labelsMes;
+
+  const ventasMensualesConML = prediccionML?.ventas_predichas
+    ? [...ventasMensuales, prediccionML.ventas_predichas]
+    : ventasMensuales;
+
   const dataVentas = {
-    labels: labelsMes,
+    labels: labelsMesConML,
     datasets: [
       {
         label: "Ventas ($)",
-        backgroundColor: "#1976d2",
-        data: ventasMensuales,
+        backgroundColor: labelsMesConML.map((_, i) =>
+          i === labelsMesConML.length - 1 && prediccionML ? "#2ecc40" : "#1976d2"
+        ),
+        data: ventasMensualesConML,
         borderRadius: 8,
       },
     ],
@@ -343,7 +374,32 @@ export default function DashboardPage() {
         )}
       </Paper>
       <Divider sx={{ my: 4 }} />
-      {/* Puedes seguir agregando secciones: ML, alertas, recomendaciones, etc */}
+      {/* Sección de Machine Learning, alertas, recomendaciones, etc */}
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          mt: 2,
+          bgcolor: "#e8fff5",
+          color: "#207244",
+          maxWidth: 400,
+        }}
+      >
+        <Typography variant="h6" fontWeight={700} mb={1}>
+          Predicción automática ML 📈
+        </Typography>
+        <Typography variant="body1">
+          Próxima venta estimada: <b>
+            {prediccionML?.ventas_predichas 
+              ? `S/ ${Number(prediccionML.ventas_predichas).toLocaleString("es-PE", { maximumFractionDigits: 2 })}` 
+              : "No disponible"}
+          </b> para <b>{prediccionML?.periodo_predicho || "--"}</b>
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mt={1}>
+          Basado en análisis de IA de tu histórico de ventas.
+        </Typography>
+      </Paper>
     </Box>
   );
 }
