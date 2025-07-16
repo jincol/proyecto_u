@@ -76,9 +76,10 @@ export default function ClientesPage() {
     fetchClientes();
   }, []);
 
+  // CORREGIDO: Llama al endpoint correcto y usa el alias correcto
   const fetchClientes = () => {
     setLoading(true);
-    axios.get("http://localhost:8000/clients")
+    axios.get("http://localhost:8000/clients/clientes")
       .then(res => setClientes(res.data))
       .finally(() => setLoading(false));
   };
@@ -103,7 +104,7 @@ export default function ClientesPage() {
       (cli.name.toLowerCase().includes(search.toLowerCase()) ||
       (cli.email || "").toLowerCase().includes(search.toLowerCase()) ||
       (cli.phone || "").toLowerCase().includes(search.toLowerCase())) &&
-      (!segmentFilter || cli.segmento_ml === segmentFilter)
+      (!segmentFilter || (cli.segmento_ml_ml || cli.segmento_ml) === segmentFilter)
   );
 
   // EDICIÓN
@@ -186,7 +187,11 @@ export default function ClientesPage() {
 
   // Extrae los segmentos únicos para el filtro
   const segmentosUnicos = Array.from(
-    new Set(clientes.map(c => c.segmento_ml).filter(Boolean))
+    new Set(
+      clientes
+        .map(c => c.segmento_ml_ml || c.segmento_ml)
+        .filter(Boolean)
+    )
   );
 
   return (
@@ -261,76 +266,80 @@ export default function ClientesPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((cli) => (
-                  <TableRow key={cli.id}>
-                    <TableCell>
-                      <Typography fontWeight="bold">{cli.name}</Typography>
-                    </TableCell>
-                    <TableCell>{cli.email}</TableCell>
-                    <TableCell>
-                      {cli.phone ? (
-                        <Chip
-                          label={cli.phone}
-                          color="info"
-                          variant="outlined"
-                          size="small"
-                        />
-                      ) : "-"}
-                    </TableCell>
-                    <TableCell>{cli.address || "-"}</TableCell>
-                    {/* NUEVO: Segmento ML */}
-                    <TableCell>
-                      {cli.segmento_ml ? (
-                        <Chip
-                          label={cli.segmento_ml}
-                          size="small"
-                          sx={{
-                            bgcolor: segmentoColor(cli.segmento_ml),
-                            color: "#fff",
-                            fontWeight: "bold",
-                            letterSpacing: 0.5,
-                            fontSize: 14,
-                          }}
-                        />
-                      ) : (
-                        <Chip label="Sin segmento" size="small" variant="outlined" color="default" />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip title="Ver predicción de ventas ML">
-                        <span>
-                          <IconButton
-                            color="success"
+                filtered.map((cli) => {
+                  // Usa el alias correcto devuelto por el backend
+                  const segmento = cli.segmento_ml_ml || cli.segmento_ml || "Sin segmento";
+                  return (
+                    <TableRow key={cli.id}>
+                      <TableCell>
+                        <Typography fontWeight="bold">{cli.name}</Typography>
+                      </TableCell>
+                      <TableCell>{cli.email}</TableCell>
+                      <TableCell>
+                        {cli.phone ? (
+                          <Chip
+                            label={cli.phone}
+                            color="info"
+                            variant="outlined"
                             size="small"
-                            onClick={() => handleOpenPrediccion(cli)}
+                          />
+                        ) : "-"}
+                      </TableCell>
+                      <TableCell>{cli.address || "-"}</TableCell>
+                      {/* NUEVO: Segmento ML */}
+                      <TableCell>
+                        {segmento && segmento !== "Sin segmento" ? (
+                          <Chip
+                            label={segmento}
+                            size="small"
+                            sx={{
+                              bgcolor: segmentoColor(segmento),
+                              color: "#fff",
+                              fontWeight: "bold",
+                              letterSpacing: 0.5,
+                              fontSize: 14,
+                            }}
+                          />
+                        ) : (
+                          <Chip label="Sin segmento" size="small" variant="outlined" color="default" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title="Ver predicción de ventas ML">
+                          <span>
+                            <IconButton
+                              color="success"
+                              size="small"
+                              onClick={() => handleOpenPrediccion(cli)}
+                            >
+                              <ShowChartIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Tooltip title="Editar">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleOpenModal(cli)}
                           >
-                            <ShowChartIcon />
+                            <EditIcon />
                           </IconButton>
-                        </span>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Editar">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenModal(cli)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Eliminar">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleOpenDelete(cli.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
+                        </Tooltip>
+                        <Tooltip title="Eliminar">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleOpenDelete(cli.id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

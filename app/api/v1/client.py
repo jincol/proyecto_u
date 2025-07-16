@@ -51,11 +51,11 @@ def get_clientes(db: Session = Depends(get_db)):
             c.email,
             c.phone,
             c.address,
-            COALESCE(r.result::json->>'segmento_ml_nombre', 'Sin segmento') AS segmento_ml
+            COALESCE(r.result::json->>'segmento_ml_nombre', 'Sin segmento') AS segmento_ml_ml
         FROM clients c
         LEFT JOIN ml_results r
           ON r.entity_type = 'client'
-         AND r.entity_id::int = c.id
+         AND r.entity_id = c.id
          AND r.type = 'segmentacion_clientes'
         ORDER BY c.id
     """).fetchall()

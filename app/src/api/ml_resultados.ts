@@ -39,7 +39,7 @@ export async function fetchPrediccionMLCliente(clientId: number) {
 /**
  * Obtiene la lista de clientes con segmento ML incluido (para dashboard, KPIs, etc).
  */
-export async function fetchClientesConSegmento() {
+const fetchClientes = async () => {
   const resp = await axios.get("http://localhost:8000/clients/clientes");
-  return Array.isArray(resp.data) ? resp.data : [];
-}
+  setClientes(resp.data); // O lo que uses para guardar la lista
+};
