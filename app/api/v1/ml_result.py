@@ -9,6 +9,22 @@ from typing import Optional
 
 router = APIRouter(prefix="/ml-results", tags=["ml-results"])
 
+@router.get("/prediccion-ventas", response_model=MLResultOut)
+def get_last_prediccion_ventas(
+    db: Session = Depends(get_db),
+    entity_id: Optional[int] = Query(default=None, description="Opcional: id de cliente/entidad")
+):
+    print(">>> entity_id recibido:", entity_id)
+    ml_result = crud.get_last_ml_result_by_type(
+        db, 
+        result_type="prediccion_ventas", 
+        entity_id=entity_id
+    )
+    print(">>> ml_result encontrado:", ml_result)
+    if not ml_result:
+        raise HTTPException(status_code=404, detail="Predicción ML no encontrada")
+    return ml_result
+
 @router.post("/", response_model=MLResultOut, status_code=status.HTTP_201_CREATED)
 def create_ml_result(ml_in: MLResultCreate, db: Session = Depends(get_db)):
     return crud.create_ml_result(db, ml_in)
@@ -31,18 +47,3 @@ def delete_ml_result(ml_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="MLResult not found")
     return ml_result
 
-
-@router.get("/prediccion-ventas", response_model=MLResultOut)
-def get_last_prediccion_ventas(
-    db: Session = Depends(get_db),
-    entity_id: Optional[int] = Query(default=None, description="Opcional: id de cliente/entidad")
-):
-    # Busca la última predicción de ventas global o por cliente
-    ml_result = crud.get_last_ml_result_by_type(
-        db, 
-        result_type="prediccion_ventas", 
-        entity_id=entity_id
-    )
-    if not ml_result:
-        raise HTTPException(status_code=404, detail="Predicción ML no encontrada")
-    return ml_result

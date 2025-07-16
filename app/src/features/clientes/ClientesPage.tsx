@@ -22,16 +22,38 @@ import {
   DialogActions,
   Button,
   Stack,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import ShowChartIcon from "@mui/icons-material/ShowChart";
+import PrediccionMLCard from "../dashboard/PrediccionMLCard"; // Asegúrate de tener este componente
+
+// Colores para los segmentos ML
+const SEGMENT_COLORS = {
+  "Premium": "#43a047",
+  "Recurrente": "#1976d2",
+  "En riesgo": "#ffa000",
+  "Sin segmento": "#bdbdbd",
+};
+
+function segmentoColor(segmento) {
+  return (
+    SEGMENT_COLORS[segmento] ||
+    SEGMENT_COLORS["Sin segmento"]
+  );
+}
 
 export default function ClientesPage() {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [segmentFilter, setSegmentFilter] = useState(""); // Nuevo: filtro de segmento
   const [openModal, setOpenModal] = useState(false);
   const [editing, setEditing] = useState(null); // cliente en edición
   const [form, setForm] = useState({
@@ -44,6 +66,12 @@ export default function ClientesPage() {
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  // ML Prediction modal states
+  const [openPrediccion, setOpenPrediccion] = useState(false);
+  const [prediccionData, setPrediccionData] = useState(null);
+  const [loadingPrediccion, setLoadingPrediccion] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState(null);
+
   useEffect(() => {
     fetchClientes();
   }, []);
@@ -55,11 +83,27 @@ export default function ClientesPage() {
       .finally(() => setLoading(false));
   };
 
+  const fetchPrediccionML = async (clientId) => {
+    setLoadingPrediccion(true);
+    setPrediccionData(null);
+    try {
+      const resp = await axios.get(`http://localhost:8000/ml-results/prediccion-ventas?entity_id=${clientId}`);
+      // Ajusta según el output real de tu API
+      setPrediccionData(resp.data.result || resp.data);
+    } catch {
+      setPrediccionData(null);
+    } finally {
+      setLoadingPrediccion(false);
+    }
+  };
+
+  // Filtrado por búsqueda y segmento
   const filtered = clientes.filter(
     cli =>
-      cli.name.toLowerCase().includes(search.toLowerCase()) ||
+      (cli.name.toLowerCase().includes(search.toLowerCase()) ||
       (cli.email || "").toLowerCase().includes(search.toLowerCase()) ||
-      (cli.phone || "").toLowerCase().includes(search.toLowerCase())
+      (cli.phone || "").toLowerCase().includes(search.toLowerCase())) &&
+      (!segmentFilter || cli.segmento_ml === segmentFilter)
   );
 
   // EDICIÓN
@@ -128,6 +172,23 @@ export default function ClientesPage() {
     handleCloseDelete();
   };
 
+  // ML Prediction Modal
+  const handleOpenPrediccion = (cliente) => {
+    setOpenPrediccion(true);
+    setSelectedCliente(cliente);
+    fetchPrediccionML(cliente.id);
+  };
+  const handleClosePrediccion = () => {
+    setOpenPrediccion(false);
+    setPrediccionData(null);
+    setSelectedCliente(null);
+  };
+
+  // Extrae los segmentos únicos para el filtro
+  const segmentosUnicos = Array.from(
+    new Set(clientes.map(c => c.segmento_ml).filter(Boolean))
+  );
+
   return (
     <Box sx={{ p: 4 }}>
       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
@@ -142,21 +203,38 @@ export default function ClientesPage() {
       </Box>
 
       <Paper sx={{ mb: 2, p: 2 }}>
-        <TextField
-          label="Buscar cliente"
-          variant="outlined"
-          size="small"
-          fullWidth
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <TextField
+            label="Buscar cliente"
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Segmento ML</InputLabel>
+            <Select
+              value={segmentFilter}
+              label="Segmento ML"
+              onChange={e => setSegmentFilter(e.target.value)}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              {segmentosUnicos.map(seg => (
+                <MenuItem key={seg} value={seg}>
+                  {seg}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
       </Paper>
 
       {loading ? (
@@ -170,13 +248,15 @@ export default function ClientesPage() {
                 <TableCell>Email</TableCell>
                 <TableCell>Teléfono</TableCell>
                 <TableCell>Dirección</TableCell>
+                <TableCell>Segmento ML</TableCell>
+                <TableCell>Predicción ML</TableCell>
                 <TableCell align="right">Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={7} align="center">
                     No hay clientes.
                   </TableCell>
                 </TableRow>
@@ -198,6 +278,37 @@ export default function ClientesPage() {
                       ) : "-"}
                     </TableCell>
                     <TableCell>{cli.address || "-"}</TableCell>
+                    {/* NUEVO: Segmento ML */}
+                    <TableCell>
+                      {cli.segmento_ml ? (
+                        <Chip
+                          label={cli.segmento_ml}
+                          size="small"
+                          sx={{
+                            bgcolor: segmentoColor(cli.segmento_ml),
+                            color: "#fff",
+                            fontWeight: "bold",
+                            letterSpacing: 0.5,
+                            fontSize: 14,
+                          }}
+                        />
+                      ) : (
+                        <Chip label="Sin segmento" size="small" variant="outlined" color="default" />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip title="Ver predicción de ventas ML">
+                        <span>
+                          <IconButton
+                            color="success"
+                            size="small"
+                            onClick={() => handleOpenPrediccion(cli)}
+                          >
+                            <ShowChartIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </TableCell>
                     <TableCell align="right">
                       <Tooltip title="Editar">
                         <IconButton
@@ -295,6 +406,36 @@ export default function ClientesPage() {
             color="error"
           >
             Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal para mostrar predicción ML */}
+      <Dialog open={openPrediccion} onClose={handleClosePrediccion} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Predicción automática ML
+          {selectedCliente && (
+            <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
+              {selectedCliente.name}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent>
+          {loadingPrediccion ? (
+            <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : prediccionData ? (
+            <PrediccionMLCard resultado={prediccionData} />
+          ) : (
+            <Typography color="text.secondary">
+              No hay predicción disponible para este cliente.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePrediccion} color="primary">
+            Cerrar
           </Button>
         </DialogActions>
       </Dialog>

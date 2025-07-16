@@ -41,3 +41,45 @@ def delete_client(client_id: int, db: Session = Depends(get_db)):
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
     return db_client
+
+@router.get("/clientes")
+def get_clientes(db: Session = Depends(get_db)):
+    rows = db.execute("""
+        SELECT
+            c.id,
+            c.name,
+            c.email,
+            c.phone,
+            c.address,
+            COALESCE(r.result::json->>'segmento_ml_nombre', 'Sin segmento') AS segmento_ml
+        FROM clients c
+        LEFT JOIN ml_results r
+          ON r.entity_type = 'client'
+         AND r.entity_id::int = c.id
+         AND r.type = 'segmentacion_clientes'
+        ORDER BY c.id
+    """).fetchall()
+    return [dict(r) for r in rows]
+
+@router.get("/segmentos-ml-count")
+def clientes_segmentos_ml_count(db: Session = Depends(get_db)):
+    """
+    Devuelve el conteo de clientes agrupado por segmento ML.
+    Respuesta: [{"segmento_ml": "Premium", "cantidad": 8}, ...]
+    """
+    rows = db.execute("""
+        SELECT
+            COALESCE(r.result::json->>'segmento_ml_nombre', 'Sin segmento') as segmento_ml,
+            COUNT(*) as cantidad
+        FROM clients c
+        LEFT JOIN ml_results r
+          ON r.entity_type = 'client'
+          AND r.entity_id = c.id
+          AND r.type = 'segmentacion_clientes'
+        GROUP BY segmento_ml
+        ORDER BY cantidad DESC
+    """).fetchall()
+    return [
+        {"segmento_ml": r["segmento_ml"], "cantidad": r["cantidad"]}
+        for r in rows
+    ]

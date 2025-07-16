@@ -23,6 +23,7 @@ import { getLowStockProductos } from "../../api/productos";
 import { Bar } from "react-chartjs-2";
 import { Chart, registerables } from "chart.js";
 import AlertasStockDrawer from "./AlertasStockDrawer";
+import PrediccionMLCard from "./PrediccionMLCard";
 Chart.register(...registerables);
 
 // COLORES NOTIFICACIONES
@@ -374,32 +375,8 @@ export default function DashboardPage() {
         )}
       </Paper>
       <Divider sx={{ my: 4 }} />
-      {/* Sección de Machine Learning, alertas, recomendaciones, etc */}
-      <Paper
-        elevation={3}
-        sx={{
-          p: 3,
-          borderRadius: 3,
-          mt: 2,
-          bgcolor: "#e8fff5",
-          color: "#207244",
-          maxWidth: 400,
-        }}
-      >
-        <Typography variant="h6" fontWeight={700} mb={1}>
-          Predicción automática ML 📈
-        </Typography>
-        <Typography variant="body1">
-          Próxima venta estimada: <b>
-            {prediccionML?.ventas_predichas 
-              ? `S/ ${Number(prediccionML.ventas_predichas).toLocaleString("es-PE", { maximumFractionDigits: 2 })}` 
-              : "No disponible"}
-          </b> para <b>{prediccionML?.periodo_predicho || "--"}</b>
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mt={1}>
-          Basado en análisis de IA de tu histórico de ventas.
-        </Typography>
-      </Paper>
+      {/* Sección de Machine Learning: tarjeta profesional */}
+      <PrediccionMLCard resultado={prediccionML} />
     </Box>
   );
 }
