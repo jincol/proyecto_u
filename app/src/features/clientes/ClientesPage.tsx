@@ -78,7 +78,7 @@ export default function ClientesPage() {
 
   const fetchClientes = () => {
     setLoading(true);
-    axios.get("http://localhost:8000/clients")
+      axios.get("http://localhost:8000/clients/clientes")
       .then(res => setClientes(res.data))
       .finally(() => setLoading(false));
   };
