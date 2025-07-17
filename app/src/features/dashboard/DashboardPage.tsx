@@ -26,7 +26,6 @@ import AlertasStockDrawer from "./AlertasStockDrawer";
 import PrediccionMLCard from "./PrediccionMLCard";
 Chart.register(...registerables);
 
-// COLORES NOTIFICACIONES
 const tipoColor = {
   warning: "#FF9800",
   info: "#2196F3",
@@ -59,7 +58,6 @@ export default function DashboardPage() {
   const [notificaciones, setNotificaciones] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Simulados: deberías traer estos datos de tu backend
   const [clientes, setClientes] = useState(32);
   const [facturas, setFacturas] = useState(124);
   const [alertasStock, setAlertasStock] = useState<number>(0);
@@ -116,7 +114,6 @@ export default function DashboardPage() {
     }
   };
 
-  // ML Prediction fetch
   const fetchPrediccionML = async () => {
     try {
       const resp = await axios.get("http://localhost:8000/ml-results/prediccion-ventas");
@@ -134,7 +131,7 @@ export default function DashboardPage() {
       )
       .slice(0, 4);
 
-  // KPI Cards, incluye la de ML
+  // KPI Cards
   const kpiCards = [
     {
       label: "Clientes",
@@ -182,7 +179,6 @@ export default function DashboardPage() {
     },
   ];
 
-  // Gráfica ventas: agrega la predicción como barra extra si hay
   const labelsMesConML = prediccionML?.periodo_predicho
     ? [...labelsMes, prediccionML.periodo_predicho]
     : labelsMes;
@@ -282,7 +278,7 @@ export default function DashboardPage() {
         productos={alertasStockList}
       />
       <Grid container spacing={2} mb={2}>
-        {/* Ventas mensuales */}
+        {/* Vm */}
         <Grid item xs={12} md={6}>
           <Paper elevation={3} sx={{ p: 3, borderRadius: 3, minHeight: 300 }}>
             <Typography variant="h6" fontWeight={700} mb={2}>
@@ -304,7 +300,7 @@ export default function DashboardPage() {
             <Typography variant="h6" fontWeight={700} mb={2}>
               Cuentas por cobrar & Productos destacados
             </Typography>
-            {/* Simulación: puedes cambiar por una tabla o gráfica real */}
+            {}
             <Stack spacing={1}>
               <Box display="flex" alignItems="center">
                 <PaidIcon color="warning" sx={{ mr: 1 }} />
@@ -328,7 +324,7 @@ export default function DashboardPage() {
           </Paper>
         </Grid>
       </Grid>
-      {/* NOTIFICACIONES AGRUPADAS */}
+      {}
       <Paper
         elevation={2}
         sx={{
@@ -375,7 +371,7 @@ export default function DashboardPage() {
         )}
       </Paper>
       <Divider sx={{ my: 4 }} />
-      {/* Sección de Machine Learning: tarjeta profesional */}
+      {/* Sección de ML cards*/}
       <PrediccionMLCard resultado={prediccionML} />
     </Box>
   );

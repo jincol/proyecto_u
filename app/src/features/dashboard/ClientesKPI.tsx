@@ -1,7 +1,6 @@
 import { Card, Typography, Stack } from "@mui/material";
 
 export default function ClientesKPI({ data }) {
-  // data: igual que antes
   return (
     <Stack direction="row" spacing={2}>
       {data.map(item => (

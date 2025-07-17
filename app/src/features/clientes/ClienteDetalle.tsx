@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fetchPrediccionMLCliente } from "../../api/mlResults";
+import { fetchPrediccionMLCliente } from "../../api/ml_resultados";
 import PrediccionMLCard from "../dashboard/PrediccionMLCard";
 
 export default function ClienteDetalle({ clientId }: { clientId: number }) {
@@ -15,7 +15,7 @@ export default function ClienteDetalle({ clientId }: { clientId: number }) {
 
   return (
     <div>
-      {/* ... otros datos del cliente ... */}
+      {}
       <h2>Predicción automática ML</h2>
       {loading ? (
         <p>Cargando predicción...</p>
