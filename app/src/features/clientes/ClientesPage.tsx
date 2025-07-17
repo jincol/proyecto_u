@@ -53,9 +53,9 @@ export default function ClientesPage() {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [segmentFilter, setSegmentFilter] = useState(""); 
+  const [segmentFilter, setSegmentFilter] = useState(""); // Nuevo: filtro de segmento
   const [openModal, setOpenModal] = useState(false);
-  const [editing, setEditing] = useState(null); 
+  const [editing, setEditing] = useState(null); // cliente en edición
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -66,6 +66,7 @@ export default function ClientesPage() {
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  // ML Prediction modal states
   const [openPrediccion, setOpenPrediccion] = useState(false);
   const [prediccionData, setPrediccionData] = useState(null);
   const [loadingPrediccion, setLoadingPrediccion] = useState(false);
@@ -87,6 +88,7 @@ export default function ClientesPage() {
     setPrediccionData(null);
     try {
       const resp = await axios.get(`http://localhost:8000/ml-results/prediccion-ventas?entity_id=${clientId}`);
+      // Ajusta según el output real de tu API
       setPrediccionData(resp.data.result || resp.data);
     } catch {
       setPrediccionData(null);
@@ -131,6 +133,7 @@ export default function ClientesPage() {
     setSaving(true);
     try {
       if (editing) {
+        // EDITAR
         await axios.put(`http://localhost:8000/clients/${editing.id}`, {
           name: form.name,
           email: form.email,
@@ -138,6 +141,7 @@ export default function ClientesPage() {
           address: form.address,
         });
       } else {
+        // AGREGAR
         await axios.post("http://localhost:8000/clients", {
           name: form.name,
           email: form.email,
@@ -152,6 +156,7 @@ export default function ClientesPage() {
     }
   };
 
+  // ELIMINAR
   const handleOpenDelete = id => {
     setOpenDelete(true);
     setDeleteId(id);
@@ -167,7 +172,7 @@ export default function ClientesPage() {
     handleCloseDelete();
   };
 
-  // PM
+  // ML Prediction Modal
   const handleOpenPrediccion = (cliente) => {
     setOpenPrediccion(true);
     setSelectedCliente(cliente);
@@ -179,7 +184,7 @@ export default function ClientesPage() {
     setSelectedCliente(null);
   };
 
-  
+  // Extrae los segmentos únicos para el filtro
   const segmentosUnicos = Array.from(
     new Set(clientes.map(c => c.segmento_ml).filter(Boolean))
   );
@@ -332,7 +337,7 @@ export default function ClientesPage() {
         </TableContainer>
       )}
 
-      {}
+      {/* Modal para agregar/editar cliente */}
       <Dialog open={openModal} onClose={handleCloseModal} maxWidth="xs" fullWidth>
         <DialogTitle>{editing ? "Editar Cliente" : "Agregar Cliente"}</DialogTitle>
         <DialogContent>
@@ -385,7 +390,7 @@ export default function ClientesPage() {
         </DialogActions>
       </Dialog>
 
-      {}
+      {/* Modal de confirmación para eliminar */}
       <Dialog open={openDelete} onClose={handleCloseDelete} maxWidth="xs" fullWidth>
         <DialogTitle>¿Eliminar cliente?</DialogTitle>
         <DialogContent>
@@ -405,7 +410,7 @@ export default function ClientesPage() {
         </DialogActions>
       </Dialog>
 
-      {}
+      {/* Modal para mostrar predicción ML */}
       <Dialog open={openPrediccion} onClose={handleClosePrediccion} maxWidth="sm" fullWidth>
         <DialogTitle>
           Predicción automática ML
